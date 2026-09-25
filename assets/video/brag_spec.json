@@ -1,0 +1,42 @@
+{
+  "title": "Agentic-ReadMe-Creator Launch Video",
+  "duration_seconds": 20,
+  "target_resolution": "1920x1080",
+  "framerate": 60,
+  "scenes": [
+    {
+      "timecode": "00:00 - 00:04",
+      "duration_seconds": 4,
+      "title": "The Hook & Pain Point",
+      "narration": "You need a verified, media-rich README grounded in real code runs\u2014not another generic text generator.",
+      "visual": "Title card: Agentic-ReadMe-Creator with pain callout"
+    },
+    {
+      "timecode": "00:04 - 00:10",
+      "duration_seconds": 6,
+      "title": "The Real Run",
+      "narration": "Watch Agentic-ReadMe-Creator execute live in the sandbox.",
+      "visual": "Terminal recording executing quickstart and verifying claims"
+    },
+    {
+      "timecode": "00:10 - 00:16",
+      "duration_seconds": 6,
+      "title": "Ground Truth Architecture",
+      "narration": "Every figure and claim is checked against an immutable facts ledger.",
+      "visual": "Architecture diagram transitioning into claim audit validation"
+    },
+    {
+      "timecode": "00:16 - 00:20",
+      "duration_seconds": 4,
+      "title": "Quickstart & Verified PR",
+      "narration": "Install Agentic-ReadMe-Creator and generate zero-drift docs today.",
+      "visual": "PR diff showing verified assets and passing checks"
+    }
+  ],
+  "github_safe_embed": {
+    "pattern": "gif_preview_linking_to_mp4",
+    "preview_gif": "assets/demo/hero-demo.svg",
+    "target_mp4": "assets/video/launch-video.mp4",
+    "github_discussions_or_release_note": "Upload MP4 to GitHub Release or issue/PR comment to obtain a https://github.com/user-attachments/assets/... URL."
+  }
+}

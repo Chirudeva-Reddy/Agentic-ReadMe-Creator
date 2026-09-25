@@ -1,0 +1,56 @@
+{
+  "repo_name": "Agentic-ReadMe-Creator",
+  "generated_at": "2026-09-25T12:59:42.214602+00:00",
+  "facts": {
+    "python_version": {
+      "key": "python_version",
+      "value": ">=3.11",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Supported Python version requirement",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T12:59:42.232705+00:00"
+    },
+    "project_version": {
+      "key": "project_version",
+      "value": "0.1.0",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Project release version",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T12:59:42.232763+00:00"
+    },
+    "python_file_count": {
+      "key": "python_file_count",
+      "value": 25,
+      "source_file": "src/",
+      "source_type": "source_code",
+      "description": "Number of Python source files",
+      "unit": "files",
+      "line_number": null,
+      "verified_at": "2026-09-25T12:59:42.238490+00:00"
+    },
+    "python_loc": {
+      "key": "python_loc",
+      "value": 2869,
+      "source_file": "src/",
+      "source_type": "source_code",
+      "description": "Lines of Python code",
+      "unit": "lines",
+      "line_number": null,
+      "verified_at": "2026-09-25T12:59:42.238501+00:00"
+    },
+    "test_count": {
+      "key": "test_count",
+      "value": 22,
+      "source_file": "tests",
+      "source_type": "test_run",
+      "description": "Total verified test case count",
+      "unit": "tests",
+      "line_number": null,
+      "verified_at": "2026-09-25T12:59:42.241439+00:00"
+    }
+  }
+}

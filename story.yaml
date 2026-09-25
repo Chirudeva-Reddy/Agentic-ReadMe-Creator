@@ -1,0 +1,40 @@
+version: '1.0'
+repo_name: Agentic-ReadMe-Creator
+target_audience: Developers, ML engineers, and technical evaluators
+hook: "You need a verified, media-rich README grounded in real code runs\u2014not\
+  \ another generic text generator."
+problem: Most documentation pipelines generate superficial text or unverified marketing
+  claims. When code changes or tests pass, READMEs drift out of sync, displaying obsolete
+  counts and broken media.
+solution: Agentic-ReadMe-Creator binds documentation directly to code execution, verifying
+  claims against a deterministic facts ledger before generating code-grounded diagrams,
+  demos, and READMEs.
+key_claims:
+- claim: Automated test suite with 22 passing tests verifying core system invariants.
+  evidence_file: tests
+  metrics:
+    test_count: 22
+  verified: true
+- claim: Modular architecture spanning 2869 lines of code across pipeline stages.
+  evidence_file: src/
+  metrics:
+    loc: 2869
+  verified: true
+architecture_nodes:
+- id: entrypoint
+  label: CLI / Entrypoint (cli.py)
+  role: entrypoint
+  source_file: src/agentic_readme/cli.py
+  technologies: []
+quickstart_commands:
+- git clone <repo-url> && cd Agentic-ReadMe-Creator
+- pip install -e .
+- pytest
+- python3 src/agentic_readme/cli.py
+deliberate_omissions:
+- No unverified LLM generation passes without ledger grounding
+- No relative <video> tags in README that fail to render on GitHub
+- No marketing buzzwords or generic template greetings
+evidence_summary: Every figure above is verified against source code and execution
+  logs in facts.json
+created_at: '2026-09-25T12:59:42.242153+00:00'
