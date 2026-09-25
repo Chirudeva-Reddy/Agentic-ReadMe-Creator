@@ -28,21 +28,35 @@ class WriterAgent:
 
     def _render_readme(self, story: StorySpec, facts: FactsLedger) -> str:
         # Extract verified facts
+
+        badges: List[str] = []
+
         lic_fact = facts.get_fact("license")
-        lic_val = str(lic_fact.value) if lic_fact else "MIT"
+        if lic_fact:
+            lic_val = str(lic_fact.value)
+            lic_file = lic_fact.source_file or "LICENSE"
+            badges.append(f'<a href="{lic_file}"><img alt="license {lic_val}" src="https://img.shields.io/badge/license-{lic_val}-blue?style=flat-square"></a>')
 
         py_fact = facts.get_fact("python_version")
-        py_val = str(py_fact.value) if py_fact else "3.11+"
+        if py_fact:
+            py_val = str(py_fact.value)
+            py_file = py_fact.source_file or "pyproject.toml"
+            badges.append(f'<a href="{py_file}"><img alt="python {py_val}" src="https://img.shields.io/badge/python-{py_val.replace(" ", "%20")}-3776AB?style=flat-square"></a>')
+        else:
+            pkg_fact = facts.get_fact("package_version")
+            if pkg_fact:
+                badges.append(f'<a href="package.json"><img alt="version {pkg_fact.value}" src="https://img.shields.io/badge/version-{pkg_fact.value}-CB3837?style=flat-square"></a>')
+            cargo_fact = facts.get_fact("cargo_version")
+            if cargo_fact:
+                badges.append(f'<a href="Cargo.toml"><img alt="crates.io {cargo_fact.value}" src="https://img.shields.io/badge/crates.io-v{cargo_fact.value}-dea584?style=flat-square"></a>')
 
         test_fact = facts.get_fact("test_count")
-        test_val = str(test_fact.value) if test_fact else "52"
-
-        # Build flat-square badges linking to actual evidence files
-        badges = [
-            f'<a href="LICENSE"><img alt="license {lic_val}" src="https://img.shields.io/badge/license-{lic_val}-blue?style=flat-square"></a>',
-            f'<a href="pyproject.toml"><img alt="python {py_val}" src="https://img.shields.io/badge/python-{py_val.replace(" ", "%20")}-3776AB?style=flat-square"></a>',
-            f'<a href="tests/"><img alt="tests {test_val} passed" src="https://img.shields.io/badge/tests-{test_val}%20passed-success?style=flat-square"></a>',
-        ]
+        if test_fact:
+            test_val = str(test_fact.value)
+            test_source = test_fact.source_file or "tests/"
+            if not test_source.endswith("/"):
+                test_source += "/"
+            badges.append(f'<a href="{test_source}"><img alt="tests {test_val} passed" src="https://img.shields.io/badge/tests-{test_val}%20passed-success?style=flat-square"></a>')
 
         # Alt text describing the hero visual
         hero_alt = (
@@ -93,6 +107,7 @@ That run is real, and it is the whole pitch: **every claim, badge, and diagram n
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/architecture-dark.svg">
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/diagrams/architecture-static.svg">
     <img alt="{arch_alt}" src="assets/diagrams/architecture.svg" width="760">
   </picture>
 </p>
@@ -118,3 +133,4 @@ That run is real, and it is the whole pitch: **every claim, badge, and diagram n
 {omissions_list}
 """
         return readme_text
+

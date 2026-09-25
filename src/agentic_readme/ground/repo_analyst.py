@@ -57,7 +57,10 @@ class RepoAnalyst:
         # 3. Detect run & test commands
         test_cmd, quickstart_cmd = self._detect_commands(lang, entrypoints)
 
-        # 4. Synthesize code-grounded architecture nodes
+        # 4. Safe execution test: try running CLI help if available
+        self._test_headless_run(entrypoints, ledger)
+
+        # 5. Synthesize code-grounded architecture nodes
         arch_nodes = self._derive_architecture_nodes(entrypoints)
 
         return RepoAnalysis(
@@ -69,6 +72,52 @@ class RepoAnalyst:
             quickstart_command=quickstart_cmd,
             architecture_nodes=arch_nodes,
             facts_ledger=ledger,
+        )
+
+    def _test_headless_run(self, entrypoints: List[str], ledger: FactsLedger) -> None:
+        """Attempt safe verification run (CLI --help) to capture real outputs."""
+        if not entrypoints:
+            ledger.add_fact(
+                key="headless_run_status",
+                value="no_entrypoint_found",
+                source_file=".",
+                description="Headless run status: no entrypoint found",
+            )
+            return
+
+        ep = entrypoints[0]
+        if ep.endswith(".py"):
+            try:
+                res = subprocess.run(
+                    ["python3", ep, "--help"],
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=4,
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    help_line = res.stdout.strip().splitlines()[0][:120]
+                    ledger.add_fact(
+                        key="cli_help_output",
+                        value=help_line,
+                        source_file=ep,
+                        description="Verified CLI help output from live execution",
+                    )
+                    ledger.add_fact(
+                        key="headless_run_status",
+                        value="verified_headless",
+                        source_file=ep,
+                        description="Project successfully ran headless",
+                    )
+                    return
+            except Exception:
+                pass
+
+        ledger.add_fact(
+            key="headless_run_status",
+            value="fallback_static_only",
+            source_file=ep,
+            description="Headless run unverified; using static replay/diagram fallback",
         )
 
     def _detect_stack_and_entrypoints(self) -> tuple[str, List[str]]:
@@ -151,24 +200,49 @@ class RepoAnalyst:
                 )
             )
 
-        # Check for core or processor directories
-        stage_dirs = [
-            ("ground", "Grounding Engine", "pipeline_stage"),
-            ("produce", "Asset Producers", "pipeline_stage"),
-            ("verify", "Claim Auditor & Verifiers", "guardrail"),
-            ("models", "Inference & CV Models", "pipeline_stage"),
-            ("data", "Pricing & Ground Truth Data", "storage"),
-            ("api", "Service API Layer", "entrypoint"),
-        ]
+        known_roles = {
+            "ground": ("Grounding Engine", "pipeline_stage"),
+            "produce": ("Asset Producers", "pipeline_stage"),
+            "verify": ("Claim Auditor & Verifiers", "guardrail"),
+            "models": ("Inference & Vision Models", "pipeline_stage"),
+            "triage": ("Triage & Decision Engine", "pipeline_stage"),
+            "data": ("Datasets & Pricing Storage", "storage"),
+            "api": ("Service API Layer", "entrypoint"),
+            "core": ("Core Processing Engine", "pipeline_stage"),
+            "services": ("Business Services", "pipeline_stage"),
+            "agents": ("Multi-Agent Subsystems", "pipeline_stage"),
+        }
 
-        for dirname, label, role in stage_dirs:
-            if (self.repo_path / dirname).exists() or (self.repo_path / "src" / dirname).exists():
+        # Check top-level and src/ subdirectories
+        candidates = []
+        for p in self.repo_path.iterdir():
+            if p.is_dir() and not p.name.startswith(".") and p.name not in ("tests", "test", "venv", ".venv", "docs", "assets", "dist", "build"):
+                candidates.append(p)
+        src_dir = self.repo_path / "src"
+        if src_dir.exists() and src_dir.is_dir():
+            for p in src_dir.iterdir():
+                if p.is_dir() and not p.name.startswith("."):
+                    candidates.append(p)
+
+        seen_ids = set()
+        for cand in candidates:
+            cname = cand.name.lower()
+            if cname in known_roles:
+                label, role = known_roles[cname]
+                node_id = cname
+            else:
+                label = f"{cand.name.replace('_', ' ').title()} Module"
+                role = "pipeline_stage"
+                node_id = cand.name
+
+            if node_id not in seen_ids:
+                seen_ids.add(node_id)
                 nodes.append(
                     ArchitectureNode(
-                        id=dirname,
+                        id=node_id,
                         label=label,
                         role=role,
-                        source_file=dirname,
+                        source_file=str(cand.relative_to(self.repo_path)),
                     )
                 )
 
@@ -179,3 +253,4 @@ class RepoAnalyst:
             ]
 
         return nodes
+

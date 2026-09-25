@@ -69,30 +69,61 @@ class EvaluatorOptimizer:
         if test_fact:
             expected_tests = str(test_fact.value)
             # Fix badge drift
-            text = re.sub(r"tests-\d+(%20|\s+|-)?passed", f"tests-{expected_tests}%20passed", text, flags=re.IGNORECASE)
+            text = re.sub(r"(?:tests?|pytest)-\d+(%20|\s+|-)?(?:passed)?", f"tests-{expected_tests}%20passed", text, flags=re.IGNORECASE)
             # Fix body text drift
             for finding in report.findings:
                 if finding.category == FindingCategory.FACT_DRIFT and finding.actual:
                     if finding.actual.isdigit():
-                        text = re.sub(rf"\b{finding.actual}\s+tests\b", f"{expected_tests} tests", text)
+                        text = re.sub(rf"\b{finding.actual}\s+(?:passing\s+|unit\s+)?tests?\b", f"{expected_tests} tests", text)
 
-        # 2. Fix GitHub relative <video> tags
+        # 2. Fix license badge drift
+        lic_fact = self.ledger.get_fact("license")
+        if lic_fact:
+            expected_lic = str(lic_fact.value)
+            text = re.sub(r"badge/licen[sc]e-[a-zA-Z0-9\.\_\-]+", f"badge/license-{expected_lic}", text, flags=re.IGNORECASE)
+
+        # 3. Fix Python version badge drift
+        py_fact = self.ledger.get_fact("python_version")
+        if py_fact:
+            expected_py = str(py_fact.value).replace(" ", "%20")
+            text = re.sub(r"badge/python-[0-9\.\+\>\<=\^%]+", f"badge/python-{expected_py}", text, flags=re.IGNORECASE)
+
+        # 4. Fix GitHub relative <video> tags
         for finding in report.findings:
-            if finding.category == FindingCategory.RENDER_ISSUE and "<video" in finding.actual:
-                # Replace relative <video ... src="path.mp4"> with a GIF preview linking to MP4
+            if finding.category == FindingCategory.RENDER_ISSUE and ("<video" in (finding.actual or "") or "<source" in (finding.actual or "")):
+                # Match <video ...> ... </video> or <video .../>
+                def _video_repl(match):
+                    full_match = match.group(0)
+                    src_m = re.search(r'\bsrc=["\']([^"\']+)["\']', full_match, re.IGNORECASE)
+                    poster_m = re.search(r'\bposter=["\']([^"\']+)["\']', full_match, re.IGNORECASE)
+                    video_src = src_m.group(1) if src_m else "demo.mp4"
+                    poster_src = poster_m.group(1) if poster_m else "assets/demo/hero-demo.svg"
+                    return (
+                        f'<p align="center">\n'
+                        f'  <a href="{video_src}">\n'
+                        f'    <img alt="Click to launch MP4 preview" src="{poster_src}" width="760">\n'
+                        f'  </a><br>\n'
+                        f'  <sub><a href="{video_src}">▶ Download or view video directly ({video_src})</a></sub>\n'
+                        f'</p>'
+                    )
+
                 text = re.sub(
-                    r'<video[^>]*\bsrc=["\']([^"\']+\.mp4)["\'][^>]*>[\s\S]*?</video>',
-                    r'<p align="center"><a href="\1"><img alt="Click to launch MP4 preview" src="assets/demo/hero-demo.svg" width="760"></a><br><sub><a href="\1">▶ Download or view video directly (\1)</a></sub></p>',
+                    r'<video[^>]*>[\s\S]*?</video>|<video[^>]*/>',
+                    _video_repl,
                     text,
                     flags=re.IGNORECASE,
                 )
 
-        # 3. Sanitize voice and AI throat-clearing
+        # 5. Fix badge styles (replace noisy for-the-badge with flat-square)
+        text = text.replace("style=for-the-badge", "style=flat-square")
+
+        # 6. Sanitize voice and AI throat-clearing
         text = self.voice_editor.sanitize(text)
 
-        # 4. Remove leaked jargon
+        # 7. Remove leaked jargon
         for finding in report.findings:
             if finding.category == FindingCategory.JARGON_LEAKAGE and finding.actual:
                 text = text.replace(finding.actual, "")
 
         readme_path.write_text(text, encoding="utf-8")
+

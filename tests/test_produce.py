@@ -53,6 +53,7 @@ def test_diagram_agent(tmp_path: Path):
     assert assets["excalidraw"].exists()
     assert assets["light_svg"].exists()
     assert assets["dark_svg"].exists()
+    assert assets["static_svg"].exists()
 
     # Validate excalidraw JSON structure
     excal_content = json.loads(assets["excalidraw"].read_text(encoding="utf-8"))
@@ -62,8 +63,11 @@ def test_diagram_agent(tmp_path: Path):
     # Validate SVGs
     light_content = assets["light_svg"].read_text(encoding="utf-8")
     dark_content = assets["dark_svg"].read_text(encoding="utf-8")
+    static_content = assets["static_svg"].read_text(encoding="utf-8")
     assert "<svg" in light_content and "CLI Entrypoint" in light_content
     assert "<svg" in dark_content and "#0d1117" in dark_content
+    assert "<svg" in static_content and "#24292f" in static_content
+
 
 
 def test_demo_agent(tmp_path: Path):

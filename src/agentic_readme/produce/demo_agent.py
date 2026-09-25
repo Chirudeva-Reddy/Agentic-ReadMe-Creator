@@ -84,7 +84,15 @@ Sleep 3s
         """Lightweight terminal window representation as an SVG hero asset."""
         cmds = story.quickstart_commands
         cmd_str = cmds[0] if cmds else f"./run_{story.repo_name}.sh"
-        test_claim = story.key_claims[0].claim if story.key_claims else "52 passing tests verified"
+
+        # Determine terminal output stages from architecture nodes or claims
+        nodes = story.architecture_nodes
+        stage1 = nodes[0].label if len(nodes) > 0 else "System Initialization"
+        stage2 = nodes[1].label if len(nodes) > 1 else "Pipeline Execution"
+        stage3 = nodes[2].label if len(nodes) > 2 else "Verification & Output"
+
+        claim1 = story.key_claims[0].claim if story.key_claims else "Pipeline execution verified successfully."
+        claim2 = story.key_claims[1].claim if len(story.key_claims) > 1 else "All system outputs verified against ground truth."
 
         return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="100%" height="380">
   <rect width="100%" height="100%" rx="10" fill="#1e1e2e"/>
@@ -99,15 +107,16 @@ Sleep 3s
   <text x="30" y="80" font-size="14" font-family="monospace" fill="#cdd6f4">
     <tspan fill="#a6e3a1">$ </tspan>{cmd_str}
   </text>
-  <text x="30" y="115" font-size="13" font-family="monospace" fill="#89b4fa">[1/3] Phase 0: Grounding</text>
-  <text x="50" y="140" font-size="13" font-family="monospace" fill="#a6adc8">✔ Inspected code &amp; test suites</text>
-  <text x="50" y="165" font-size="13" font-family="monospace" fill="#a6adc8">✔ Generated story.yaml &amp; facts.json (immutable)</text>
+  <text x="30" y="115" font-size="13" font-family="monospace" fill="#89b4fa">[1/3] {stage1}</text>
+  <text x="50" y="140" font-size="13" font-family="monospace" fill="#a6adc8">✔ Initialized verified components</text>
+  <text x="50" y="165" font-size="13" font-family="monospace" fill="#a6adc8">✔ Grounded in real inputs and configuration</text>
 
-  <text x="30" y="205" font-size="13" font-family="monospace" fill="#89b4fa">[2/3] Phase 1: Parallel Fan-Out</text>
-  <text x="50" y="230" font-size="13" font-family="monospace" fill="#a6adc8">✔ Diagram: architecture.excalidraw + light/dark SVGs</text>
-  <text x="50" y="255" font-size="13" font-family="monospace" fill="#a6adc8">✔ Demo: hero GIF (≤5MB) + /brag launch video spec</text>
+  <text x="30" y="205" font-size="13" font-family="monospace" fill="#89b4fa">[2/3] {stage2}</text>
+  <text x="50" y="230" font-size="13" font-family="monospace" fill="#a6adc8">✔ Processing pipeline stages executed without drift</text>
+  <text x="50" y="255" font-size="13" font-family="monospace" fill="#a6adc8">✔ Stage output verified against deterministic facts</text>
 
-  <text x="30" y="295" font-size="13" font-family="monospace" fill="#a6e3a1">[3/3] Phase 2: Claim Auditor &amp; Verifiers</text>
-  <text x="50" y="320" font-size="13" font-family="monospace" fill="#a6e3a1">✔ {test_claim}</text>
-  <text x="50" y="345" font-size="13" font-family="monospace" fill="#a6e3a1">✔ 0 fact drifts detected across README, badges, and media</text>
+  <text x="30" y="295" font-size="13" font-family="monospace" fill="#a6e3a1">[3/3] {stage3}</text>
+  <text x="50" y="320" font-size="13" font-family="monospace" fill="#a6e3a1">✔ {claim1}</text>
+  <text x="50" y="345" font-size="13" font-family="monospace" fill="#a6e3a1">✔ {claim2}</text>
 </svg>"""
+

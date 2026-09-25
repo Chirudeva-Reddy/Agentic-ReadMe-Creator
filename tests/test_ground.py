@@ -66,3 +66,57 @@ def test_repo_analyst_and_story_builder(tmp_path: Path):
     assert story.hook == "Eliminating documentation drift."
     assert len(story.key_claims) >= 1
     assert any("test" in c.claim.lower() for c in story.key_claims)
+
+
+def test_facts_extractor_nested_tests_and_evidence(tmp_path: Path):
+    """Verifies that nested test subdirectories and evidence files are discovered."""
+    # Nested test file
+    nested_dir = tmp_path / "tests" / "submodule" / "unit"
+    nested_dir.mkdir(parents=True)
+    (nested_dir / "test_nested.py").write_text("def test_nested_one(): pass\ndef test_nested_two(): pass\n", encoding="utf-8")
+
+    # Body2health reference evidence file
+    (tmp_path / "deva_gate_accepted.json").write_text("""{
+        "accuracy": 0.985,
+        "f1_score": 0.972,
+        "latency_ms": 14.2
+    }""", encoding="utf-8")
+
+    # Description in pyproject.toml
+    (tmp_path / "pyproject.toml").write_text("""[project]
+name = "deva-health"
+description = "Arrhythmia detection from wearable ECG signals"
+version = "2.1.0"
+""", encoding="utf-8")
+
+    extractor = FactsExtractor(tmp_path)
+    ledger = extractor.extract_all("deva-health")
+
+    # Tests from nested dir
+    assert ledger.get_fact("test_count").value == 2
+    # Description
+    assert ledger.get_fact("project_description").value == "Arrhythmia detection from wearable ECG signals"
+    # Evidence metrics
+    assert ledger.get_fact("metric_accuracy").value == 0.985
+    assert ledger.get_fact("metric_latency_ms").value == 14.2
+
+
+def test_story_builder_grounded_in_project_description(tmp_path: Path):
+    """Verifies that StoryBuilder dynamically adapts to the domain instead of hardcoding self-referential text."""
+    (tmp_path / "pyproject.toml").write_text("""[project]
+name = "car-triage"
+description = "Explainable collision damage triage"
+version = "1.0.0"
+""", encoding="utf-8")
+    (tmp_path / "app.py").write_text("print('ready')", encoding="utf-8")
+
+    analyst = RepoAnalyst(tmp_path)
+    analysis = analyst.analyze()
+    builder = StoryBuilder(analysis)
+    story = builder.build_story()
+
+    # Story problem and solution must mention the actual domain, NOT documentation drift!
+    assert "explainable collision damage triage" in story.solution.lower()
+    assert "documentation pipelines" not in story.problem.lower()
+    assert "opaque estimates" in story.problem.lower()
+

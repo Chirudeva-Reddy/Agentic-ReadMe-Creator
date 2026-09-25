@@ -97,10 +97,14 @@ def test_claim_auditor_passes_clean_readme(tmp_path: Path):
     ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
     ledger.add_fact("license", "MIT", "LICENSE", FactSourceType.SOURCE_CODE)
 
+    # Create tests/ and LICENSE so badge evidence links pass
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "LICENSE").write_text("MIT", encoding="utf-8")
+
     readme = tmp_path / "README.md"
     readme.write_text("""# verified-repo
-[![Tests](https://img.shields.io/badge/tests-52%20passed-success.svg)](tests/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<a href="tests/"><img alt="tests 52 passed" src="https://img.shields.io/badge/tests-52%20passed-success.svg"></a>
+<a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
 
 Our suite includes 52 tests verifying system functionality.
 """, encoding="utf-8")
@@ -109,3 +113,90 @@ Our suite includes 52 tests verifying system functionality.
     report = auditor.audit(readme)
     assert report.fatal_count == 0
     assert report.passed is True
+
+
+def test_claim_auditor_catches_small_repo_test_drift(tmp_path: Path):
+    """Proves fix for the boundary bug where repos with <= 5 tests silently ignored drift."""
+    ledger = FactsLedger(repo_name="small-repo")
+    ledger.add_fact("test_count", 3, "tests/", FactSourceType.TEST_RUN)
+
+    readme = tmp_path / "README.md"
+    readme.write_text("""# small-repo
+We run 4 tests to ensure system stability.
+""", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+    findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
+    assert len(findings) == 1
+    assert findings[0].actual == "4"
+    assert findings[0].expected == "3"
+
+
+def test_claim_auditor_catches_cross_asset_drift(tmp_path: Path):
+    """Cross-asset auditing across /brag video spec, demo tape, and Excalidraw."""
+    ledger = FactsLedger(repo_name="multi-asset")
+    ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
+
+    # Create video spec with drifted test count and leaked jargon
+    video_dir = tmp_path / "assets" / "video"
+    video_dir.mkdir(parents=True)
+    brag_spec = video_dir / "brag_spec.json"
+    brag_spec.write_text("""{
+        "title": "Launch",
+        "scenes": [
+            {"timecode": "00:00", "narration": "Option C Architecture verified across 44 tests."}
+        ]
+    }""", encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text("# multi-asset\nVerified across 52 tests.\n", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+
+    # Should catch test drift in video spec (44 vs 52)
+    video_drifts = [f for f in report.findings if f.location == "assets/video/brag_spec.json" and f.category == FindingCategory.FACT_DRIFT]
+    assert len(video_drifts) >= 1
+    assert video_drifts[0].actual == "44"
+
+    # Should catch leaked jargon in video spec
+    video_jargons = [f for f in report.findings if f.location == "assets/video/brag_spec.json" and f.category == FindingCategory.JARGON_LEAKAGE]
+    assert len(video_jargons) >= 1
+    assert "Option C Architecture" in video_jargons[0].actual
+
+
+def test_claim_auditor_catches_benchmark_metric_drift(tmp_path: Path):
+    """Verifies that numeric benchmark assertions in text are checked against facts.json."""
+    ledger = FactsLedger(repo_name="bench-repo")
+    ledger.add_fact("metric_accuracy", 0.94, "data/results.json", FactSourceType.BENCHMARK)
+
+    readme = tmp_path / "README.md"
+    readme.write_text("""# bench-repo
+Our model achieves accuracy of 0.50 on the benchmark.
+""", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+
+    metric_findings = [f for f in report.findings if "accuracy" in f.message.lower()]
+    assert len(metric_findings) >= 1
+    assert metric_findings[0].actual == "0.5"
+    assert metric_findings[0].expected == "0.94"
+
+
+def test_claim_auditor_catches_broken_badge_evidence_links(tmp_path: Path):
+    """Flags badges linking to files that don't exist in the repository."""
+    ledger = FactsLedger(repo_name="badge-repo")
+    readme = tmp_path / "README.md"
+    readme.write_text("""# badge-repo
+<a href="nonexistent/evidence.json"><img src="https://img.shields.io/badge/eval-passed-green" alt="eval"></a>
+""", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+
+    broken = [f for f in report.findings if "missing evidence target" in f.message.lower()]
+    assert len(broken) == 1
+    assert "nonexistent/evidence.json" in broken[0].actual
+

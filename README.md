@@ -1,13 +1,13 @@
 <h1 align="center">Agentic-ReadMe-Creator</h1>
 
 <p align="center">
-  <em>You need a verified, media-rich README grounded in real code runs—not another generic text generator.</em>
+  <em>Tired of opaque estimates and manual bottlenecks in a verified, media-rich readme pipeline grounded in real project runs?</em>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 22 passed" src="https://img.shields.io/badge/tests-22%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 32 passed" src="https://img.shields.io/badge/tests-32%20passed-success?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <b>Agentic-ReadMe-Creator binds documentation directly to code execution, verifying claims against a deterministic facts ledger before generating code-grounded diagrams, demos, and READMEs.</b>
+  <b>Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline grounded in real project runs, grounding system execution and performance in deterministic data and verified automated test invariants.</b>
 </p>
 
 ---
@@ -27,6 +27,7 @@ That run is real, and it is the whole pitch: **every claim, badge, and diagram n
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/architecture-dark.svg">
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/diagrams/architecture-static.svg">
     <img alt="Architecture of Agentic-ReadMe-Creator showing pipeline flow across verified components" src="assets/diagrams/architecture.svg" width="760">
   </picture>
 </p>
@@ -48,11 +49,13 @@ python3 src/agentic_readme/cli.py
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 22 passing tests verifying core system invariants. | `test_count: 22` | [`tests`](tests) | ✅ Verified |
-| Modular architecture spanning 2869 lines of code across pipeline stages. | `loc: 2869` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 32 passing tests verifying core system invariants. | `test_count: 32` | [`tests`](tests) | ✅ Verified |
+| Modular architecture spanning 3709 lines of code across pipeline stages. | `loc: 3709` | [`src/`](src/) | ✅ Verified |
+| Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 
 ## Deliberately not included
 
-- **No unverified LLM generation passes without ledger grounding**
+- **No unverified claims: every figure is mechanically checked against executable outputs in facts.json**
+- **No synthetic or staged mock runs: visual assets reflect genuine project execution**
 - **No relative <video> tags in README that fail to render on GitHub**
 - **No marketing buzzwords or generic template greetings**

@@ -1,24 +1,29 @@
 version: '1.0'
 repo_name: Agentic-ReadMe-Creator
 target_audience: Developers, ML engineers, and technical evaluators
-hook: "You need a verified, media-rich README grounded in real code runs\u2014not\
-  \ another generic text generator."
-problem: Most documentation pipelines generate superficial text or unverified marketing
-  claims. When code changes or tests pass, READMEs drift out of sync, displaying obsolete
-  counts and broken media.
-solution: Agentic-ReadMe-Creator binds documentation directly to code execution, verifying
-  claims against a deterministic facts ledger before generating code-grounded diagrams,
-  demos, and READMEs.
+hook: Tired of opaque estimates and manual bottlenecks in a verified, media-rich readme
+  pipeline grounded in real project runs?
+problem: Traditional workflows in this domain suffer from opaque estimates, unverified
+  assumptions, and documentation that drifts out of sync as code and dependencies
+  evolve.
+solution: Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline grounded
+  in real project runs, grounding system execution and performance in deterministic
+  data and verified automated test invariants.
 key_claims:
-- claim: Automated test suite with 22 passing tests verifying core system invariants.
+- claim: Automated test suite with 32 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 22
+    test_count: 32
   verified: true
-- claim: Modular architecture spanning 2869 lines of code across pipeline stages.
+- claim: Modular architecture spanning 3709 lines of code across pipeline stages.
   evidence_file: src/
   metrics:
-    loc: 2869
+    loc: 3709
+  verified: true
+- claim: Open source distribution under the MIT license.
+  evidence_file: LICENSE
+  metrics:
+    license: MIT
   verified: true
 architecture_nodes:
 - id: entrypoint
@@ -26,15 +31,32 @@ architecture_nodes:
   role: entrypoint
   source_file: src/agentic_readme/cli.py
   technologies: []
+- id: src
+  label: Src Module
+  role: pipeline_stage
+  source_file: src
+  technologies: []
+- id: agentic_readme_creator.egg-info
+  label: Agentic Readme Creator.Egg-Info Module
+  role: pipeline_stage
+  source_file: src/agentic_readme_creator.egg-info
+  technologies: []
+- id: agentic_readme
+  label: Agentic Readme Module
+  role: pipeline_stage
+  source_file: src/agentic_readme
+  technologies: []
 quickstart_commands:
 - git clone <repo-url> && cd Agentic-ReadMe-Creator
 - pip install -e .
 - pytest
 - python3 src/agentic_readme/cli.py
 deliberate_omissions:
-- No unverified LLM generation passes without ledger grounding
+- 'No unverified claims: every figure is mechanically checked against executable outputs
+  in facts.json'
+- 'No synthetic or staged mock runs: visual assets reflect genuine project execution'
 - No relative <video> tags in README that fail to render on GitHub
 - No marketing buzzwords or generic template greetings
 evidence_summary: Every figure above is verified against source code and execution
   logs in facts.json
-created_at: '2026-09-25T12:59:42.242153+00:00'
+created_at: '2026-09-25T13:15:48.672704+00:00'

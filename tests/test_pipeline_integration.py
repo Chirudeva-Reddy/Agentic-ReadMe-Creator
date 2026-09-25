@@ -47,7 +47,9 @@ def test_two():
     assert (repo_dir / "assets" / "diagrams" / "architecture.excalidraw").exists()
     assert (repo_dir / "assets" / "diagrams" / "architecture.svg").exists()
     assert (repo_dir / "assets" / "diagrams" / "architecture-dark.svg").exists()
+    assert (repo_dir / "assets" / "diagrams" / "architecture-static.svg").exists()
     assert (repo_dir / "assets" / "demo" / "demo.tape").exists()
+
     assert (repo_dir / "assets" / "demo" / "hero-demo.svg").exists()
     assert (repo_dir / "assets" / "video" / "brag_spec.json").exists()
     assert (repo_dir / "README.md").exists()

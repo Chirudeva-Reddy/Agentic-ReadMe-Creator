@@ -16,7 +16,12 @@ from agentic_readme.core.models import (
     FindingSeverity,
     VerificationReport,
 )
-from agentic_readme.rubrics.house_style import MAX_BADGE_COUNT
+from agentic_readme.rubrics.house_style import (
+    FORBIDDEN_BADGE_STYLES,
+    FORBIDDEN_PHRASES,
+    MAX_BADGE_COUNT,
+    REQUIRED_SECTIONS,
+)
 from agentic_readme.rubrics.humanizer_rules import (
     AI_BUZZWORDS,
     AI_THROAT_CLEARING,
@@ -38,9 +43,13 @@ class VoiceEditor:
         self._check_buzzwords(readme_text, readme_path, rep)
         self._check_throat_clearing(readme_text, readme_path, rep)
         self._check_template_slop(readme_text, readme_path, rep)
+        self._check_forbidden_phrases(readme_text, readme_path, rep)
         self._check_badge_noise(readme_text, readme_path, rep)
+        self._check_badge_styles(readme_text, readme_path, rep)
+        self._check_house_style_sections(readme_text, readme_path, rep)
 
         return rep
+
 
     def _check_buzzwords(
         self,
@@ -104,6 +113,26 @@ class VoiceEditor:
                     suggested_fix=f"Remove '{slop}' and focus on the real utility and verified run.",
                 )
 
+    def _check_forbidden_phrases(
+        self,
+        text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Flag phrases explicitly prohibited by house style rubric."""
+        for phrase in FORBIDDEN_PHRASES:
+            pattern = re.compile(rf"{re.escape(phrase)}", re.IGNORECASE)
+            if pattern.search(text):
+                report.add_finding(
+                    category=FindingCategory.VOICE_SLOP,
+                    severity=FindingSeverity.WARNING,
+                    message=f"Forbidden house style phrase detected: '{phrase}'.",
+                    location=f"{readme_path.name}",
+                    expected="Clean technical prose without template filler or marketing pleas",
+                    actual=phrase,
+                    suggested_fix=f"Remove '{phrase}' to maintain house style tone.",
+                )
+
     def _check_badge_noise(
         self,
         text: str,
@@ -123,13 +152,63 @@ class VoiceEditor:
                 suggested_fix="Prune vanity badges and keep only badges linked to verifiable evidence.",
             )
 
+    def _check_badge_styles(
+        self,
+        text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Flag noisy badge styles like 'for-the-badge' from NLP-Proj."""
+        for style in FORBIDDEN_BADGE_STYLES:
+            if f"style={style}" in text:
+                report.add_finding(
+                    category=FindingCategory.VOICE_SLOP,
+                    severity=FindingSeverity.MINOR,
+                    message=f"Forbidden badge style '{style}' detected (visual noise). House style mandates 'flat-square'.",
+                    location=f"{readme_path.name}",
+                    expected="style=flat-square",
+                    actual=f"style={style}",
+                    suggested_fix="Replace 'style=for-the-badge' with 'style=flat-square'.",
+                )
+
+    def _check_house_style_sections(
+        self,
+        text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Verify presence of core house style sections (duet/body2health model)."""
+        checks = [
+            ("header_centered", r'<h1\s+align=["\']center["\']>', "Centered <h1> title header"),
+            ("italic_hook", r'(?:<p\s+align=["\']center["\']>\s*<em>|\*[\w\s,–—\'-]+\*)', "Italic 1-line hook"),
+            ("quickstart", r'##\s+Quickstart', "Quickstart section"),
+            ("evidence_grounding", r'##\s+Evidence', "Evidence & Ground Truth section"),
+            ("deliberate_omissions", r'##\s+Deliberately not included', "Deliberately not included tradeoff notes"),
+        ]
+
+        for sec_id, pat, description in checks:
+            if not re.search(pat, text, re.IGNORECASE):
+                report.add_finding(
+                    category=FindingCategory.VOICE_SLOP,
+                    severity=FindingSeverity.MINOR,
+                    message=f"Missing recommended house style element: {description}.",
+                    location=f"{readme_path.name}",
+                    expected=description,
+                    actual="Missing section",
+                    suggested_fix=f"Add '{description}' following the duet/body2health house style rubric.",
+                )
+
     def sanitize(self, text: str) -> str:
         """Heuristic auto-cleaner to strip blatant AI filler and template greetings."""
         cleaned = text
         for phrase in AI_THROAT_CLEARING:
             cleaned = re.sub(rf"\b{re.escape(phrase)}\b,?\s*", "", cleaned, flags=re.IGNORECASE)
 
-        for slop in ["Welcome to ", "Hey there! ", "Happy coding! "]:
+        for slop in ["Welcome to ", "Hey there! ", "Happy coding! ", "⭐ Star us on GitHub", "Star us on GitHub", "Feel free to contribute"]:
             cleaned = re.sub(rf"{re.escape(slop)}", "", cleaned, flags=re.IGNORECASE)
 
+        for forbidden in FORBIDDEN_PHRASES:
+            cleaned = re.sub(rf"{re.escape(forbidden)}", "", cleaned, flags=re.IGNORECASE)
+
         return cleaned
+

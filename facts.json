@@ -1,7 +1,17 @@
 {
   "repo_name": "Agentic-ReadMe-Creator",
-  "generated_at": "2026-09-25T12:59:42.214602+00:00",
+  "generated_at": "2026-09-25T13:15:48.274229+00:00",
   "facts": {
+    "git_default_branch": {
+      "key": "git_default_branch",
+      "value": "main",
+      "source_file": ".git",
+      "source_type": "git",
+      "description": "Default git branch",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T13:15:48.287463+00:00"
+    },
     "python_version": {
       "key": "python_version",
       "value": ">=3.11",
@@ -10,7 +20,7 @@
       "description": "Supported Python version requirement",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-25T12:59:42.232705+00:00"
+      "verified_at": "2026-09-25T13:15:48.287740+00:00"
     },
     "project_version": {
       "key": "project_version",
@@ -20,37 +30,77 @@
       "description": "Project release version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-25T12:59:42.232763+00:00"
+      "verified_at": "2026-09-25T13:15:48.287787+00:00"
+    },
+    "project_description": {
+      "key": "project_description",
+      "value": "A verified, media-rich README pipeline grounded in real project runs",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Project summary description",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T13:15:48.287826+00:00"
     },
     "python_file_count": {
       "key": "python_file_count",
-      "value": 25,
+      "value": 26,
       "source_file": "src/",
       "source_type": "source_code",
       "description": "Number of Python source files",
       "unit": "files",
       "line_number": null,
-      "verified_at": "2026-09-25T12:59:42.238490+00:00"
+      "verified_at": "2026-09-25T13:15:48.296785+00:00"
     },
     "python_loc": {
       "key": "python_loc",
-      "value": 2869,
+      "value": 3709,
       "source_file": "src/",
       "source_type": "source_code",
       "description": "Lines of Python code",
       "unit": "lines",
       "line_number": null,
-      "verified_at": "2026-09-25T12:59:42.238501+00:00"
+      "verified_at": "2026-09-25T13:15:48.296799+00:00"
+    },
+    "license": {
+      "key": "license",
+      "value": "MIT",
+      "source_file": "LICENSE",
+      "source_type": "source_code",
+      "description": "Software license",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T13:15:48.297028+00:00"
     },
     "test_count": {
       "key": "test_count",
-      "value": 22,
+      "value": 32,
       "source_file": "tests",
       "source_type": "test_run",
-      "description": "Total verified test case count",
+      "description": "Verified test case count from pytest collection",
       "unit": "tests",
       "line_number": null,
-      "verified_at": "2026-09-25T12:59:42.241439+00:00"
+      "verified_at": "2026-09-25T13:15:48.527906+00:00"
+    },
+    "cli_help_output": {
+      "key": "cli_help_output",
+      "value": "Usage: cli.py [OPTIONS] COMMAND [ARGS]...                                      ",
+      "source_file": "src/agentic_readme/cli.py",
+      "source_type": "source_code",
+      "description": "Verified CLI help output from live execution",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T13:15:48.672297+00:00"
+    },
+    "headless_run_status": {
+      "key": "headless_run_status",
+      "value": "verified_headless",
+      "source_file": "src/agentic_readme/cli.py",
+      "source_type": "source_code",
+      "description": "Project successfully ran headless",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-25T13:15:48.672330+00:00"
     }
   }
 }

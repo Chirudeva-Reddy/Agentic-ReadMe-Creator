@@ -26,6 +26,7 @@ class DiagramAgent:
         excalidraw_path = self.output_dir / "architecture.excalidraw"
         light_svg_path = self.output_dir / "architecture.svg"
         dark_svg_path = self.output_dir / "architecture-dark.svg"
+        static_svg_path = self.output_dir / "architecture-static.svg"
 
         # 1. Generate .excalidraw source
         excalidraw_data = self._generate_excalidraw(story.architecture_nodes, story.repo_name)
@@ -39,11 +40,17 @@ class DiagramAgent:
         dark_svg = self._generate_svg(story.architecture_nodes, is_dark=True)
         dark_svg_path.write_text(dark_svg, encoding="utf-8")
 
+        # 4. Generate Static SVG (for prefers-reduced-motion and print)
+        static_svg = self._generate_svg(story.architecture_nodes, is_dark=False, is_static=True)
+        static_svg_path.write_text(static_svg, encoding="utf-8")
+
         return {
             "excalidraw": excalidraw_path,
             "light_svg": light_svg_path,
             "dark_svg": dark_svg_path,
+            "static_svg": static_svg_path,
         }
+
 
     def _generate_excalidraw(self, nodes: List[ArchitectureNode], title: str) -> Dict[str, Any]:
         """Create valid Excalidraw schema with code-grounded nodes."""
@@ -130,15 +137,33 @@ class DiagramAgent:
             "files": {},
         }
 
-    def _generate_svg(self, nodes: List[ArchitectureNode], is_dark: bool = False) -> str:
-        """Generate clean, scalable SVG diagram for light and dark modes."""
-        bg_color = "#0d1117" if is_dark else "#ffffff"
-        text_color = "#e6edf3" if is_dark else "#1f2328"
-        box_bg = "#161b22" if is_dark else "#f6f8fa"
-        box_border = "#30363d" if is_dark else "#d0d7de"
-        guard_bg = "#1c2c3e" if is_dark else "#e8f4fd"
-        guard_border = "#388bfd" if is_dark else "#0969da"
-        arrow_color = "#8b949e" if is_dark else "#656d76"
+    def _generate_svg(self, nodes: List[ArchitectureNode], is_dark: bool = False, is_static: bool = False) -> str:
+        """Generate clean, scalable SVG diagram for light, dark, and static modes."""
+        if is_static:
+            bg_color = "#ffffff"
+            text_color = "#24292f"
+            box_bg = "#f6f8fa"
+            box_border = "#57606a"
+            guard_bg = "#eaeef2"
+            guard_border = "#24292f"
+            arrow_color = "#57606a"
+        elif is_dark:
+            bg_color = "#0d1117"
+            text_color = "#e6edf3"
+            box_bg = "#161b22"
+            box_border = "#30363d"
+            guard_bg = "#1c2c3e"
+            guard_border = "#388bfd"
+            arrow_color = "#8b949e"
+        else:
+            bg_color = "#ffffff"
+            text_color = "#1f2328"
+            box_bg = "#f6f8fa"
+            box_border = "#d0d7de"
+            guard_bg = "#e8f4fd"
+            guard_border = "#0969da"
+            arrow_color = "#656d76"
+
 
         width = max(800, len(nodes) * 220 + 80)
         height = 200

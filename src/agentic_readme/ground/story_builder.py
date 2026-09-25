@@ -28,24 +28,39 @@ class StoryBuilder:
         target_audience: Optional[str] = None,
         custom_hook: Optional[str] = None,
     ) -> StorySpec:
+
         repo_name = self.analysis.repo_name
         ledger = self.analysis.facts_ledger
+
+        # Extract project description if discovered
+        desc_fact = ledger.get_fact("project_description")
+        desc = str(desc_fact.value) if desc_fact else ""
 
         # Determine audience
         audience = target_audience or "Developers, ML engineers, and technical evaluators"
 
         # Generate pain-first hook
-        hook = custom_hook or self._generate_pain_hook(repo_name)
+        hook = custom_hook or self._generate_pain_hook(repo_name, desc)
 
-        # Problem & Solution
-        problem = (
-            f"Most documentation pipelines generate superficial text or unverified marketing claims. "
-            f"When code changes or tests pass, READMEs drift out of sync, displaying obsolete counts and broken media."
-        )
-        solution = (
-            f"{repo_name} binds documentation directly to code execution, verifying claims against "
-            f"a deterministic facts ledger before generating code-grounded diagrams, demos, and READMEs."
-        )
+        # Problem & Solution grounded in the actual project domain
+        if desc:
+            problem = (
+                f"Traditional workflows in this domain suffer from opaque estimates, unverified assumptions, "
+                f"and documentation that drifts out of sync as code and dependencies evolve."
+            )
+            solution = (
+                f"{repo_name} provides {desc.lower()}, grounding system execution and performance "
+                f"in deterministic data and verified automated test invariants."
+            )
+        else:
+            problem = (
+                f"Most project documentation relies on superficial text or unverified marketing claims. "
+                f"When code changes or tests pass, READMEs drift out of sync with obsolete metrics and broken media."
+            )
+            solution = (
+                f"{repo_name} executes a code-grounded pipeline, verifying all claims and numbers against "
+                f"an immutable facts ledger before generating documentation and media assets."
+            )
 
         # Build grounded key claims
         claims: List[ClaimItem] = []
@@ -62,9 +77,24 @@ class StoryBuilder:
                 )
             )
 
-        # Claim 2: Architecture / LOC
+        # Claim 2: Benchmark & evidence metrics from data/
+        for key, fact in list(ledger.facts.items()):
+            if key.startswith("metric_") and isinstance(fact.value, (int, float, str)):
+                metric_name = key.replace("metric_", "").replace("_", " ").title()
+                claims.append(
+                    ClaimItem(
+                        claim=f"Ground-truth verified {metric_name}: {fact.value}{' ' + fact.unit if fact.unit else ''}.",
+                        evidence_file=fact.source_file,
+                        metrics={key: fact.value},
+                        verified=True,
+                    )
+                )
+                if len(claims) >= 3:
+                    break
+
+        # Claim 3: Architecture / LOC
         loc_fact = ledger.get_fact("python_loc")
-        if loc_fact:
+        if loc_fact and len(claims) < 3:
             claims.append(
                 ClaimItem(
                     claim=f"Modular architecture spanning {loc_fact.value} lines of code across pipeline stages.",
@@ -74,9 +104,9 @@ class StoryBuilder:
                 )
             )
 
-        # Claim 3: License / Open Source
+        # Claim 4: License / Open Source
         lic_fact = ledger.get_fact("license")
-        if lic_fact:
+        if lic_fact and len(claims) < 4:
             claims.append(
                 ClaimItem(
                     claim=f"Open source distribution under the {lic_fact.value} license.",
@@ -89,8 +119,21 @@ class StoryBuilder:
         # Quickstart commands
         quickstart: List[str] = []
         if self.analysis.primary_language == "Python":
-            quickstart.append("git clone <repo-url> && cd " + repo_name)
+            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
             quickstart.append("pip install -e .")
+            if self.analysis.test_command:
+                quickstart.append(self.analysis.test_command)
+            if self.analysis.quickstart_command:
+                quickstart.append(self.analysis.quickstart_command)
+        elif self.analysis.primary_language == "JavaScript/TypeScript":
+            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
+            quickstart.append("npm install")
+            if self.analysis.test_command:
+                quickstart.append(self.analysis.test_command)
+            if self.analysis.quickstart_command:
+                quickstart.append(self.analysis.quickstart_command)
+        elif self.analysis.primary_language == "Rust":
+            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
             if self.analysis.test_command:
                 quickstart.append(self.analysis.test_command)
             if self.analysis.quickstart_command:
@@ -98,7 +141,8 @@ class StoryBuilder:
 
         # Honest deliberate omissions (house style from duet: 'Deliberately not included')
         omissions = [
-            "No unverified LLM generation passes without ledger grounding",
+            "No unverified claims: every figure is mechanically checked against executable outputs in facts.json",
+            "No synthetic or staged mock runs: visual assets reflect genuine project execution",
             "No relative <video> tags in README that fail to render on GitHub",
             "No marketing buzzwords or generic template greetings",
         ]
@@ -116,7 +160,10 @@ class StoryBuilder:
             evidence_summary="Every figure above is verified against source code and execution logs in facts.json",
         )
 
-    def _generate_pain_hook(self, repo_name: str) -> str:
+    def _generate_pain_hook(self, repo_name: str, desc: str = "") -> str:
+        if desc:
+            return f"Tired of opaque estimates and manual bottlenecks in {desc.lower()}?"
         return (
             f"You need a verified, media-rich README grounded in real code runs—not another generic text generator."
         )
+

@@ -7,6 +7,7 @@ from typing import List
 
 # Badge style preferred across house style
 PREFERRED_BADGE_STYLE = "flat-square"
+FORBIDDEN_BADGE_STYLES = ["for-the-badge"]
 MAX_BADGE_COUNT = 6  # Avoid badge flood (NLP-Proj anti-pattern with 9+ noisy badges)
 
 # Required structural elements
@@ -26,7 +27,11 @@ FORBIDDEN_PHRASES = [
     "Welcome to",
     "Maintained? yes",
     "⭐ Star us on GitHub",
+    "Star us on GitHub",
     "Feel free to contribute",
     "Don't hesitate to",
     "In this repository, we",
+    "GPU-accelerated SVG instrumentation",
+    "Lab-grade figure mounting",
 ]
+
