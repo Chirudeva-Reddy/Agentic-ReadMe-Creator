@@ -1,0 +1,8 @@
+{
+  "name": "habit-streak",
+  "version": "1.0.0",
+  "description": "Track daily habits and see your longest streak",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": { "start": "node index.js", "test": "node --test" }
+}

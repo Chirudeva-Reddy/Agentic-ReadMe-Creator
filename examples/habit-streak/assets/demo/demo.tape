@@ -1,4 +1,4 @@
-# VHS Tape for Agentic-ReadMe-Creator
+# VHS Tape for habit-streak
 # Output target: hero GIF under 5MB for GitHub README performance
 Output assets/demo/hero-demo.gif
 Output assets/demo/hero-demo.mp4
@@ -14,11 +14,19 @@ Set Framerate 30
 Sleep 1s
 
 # Run verified quickstart commands
-Type "pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git"
+Type "git clone <repo-url> && cd habit-streak"
 Sleep 500ms
 Enter
 Sleep 2s
-Type "agentic-readme run path/to/your-project"
+Type "npm install"
+Sleep 500ms
+Enter
+Sleep 2s
+Type "npm test"
+Sleep 500ms
+Enter
+Sleep 2s
+Type "npm start"
 Sleep 500ms
 Enter
 Sleep 2s

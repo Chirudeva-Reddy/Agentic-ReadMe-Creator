@@ -1,0 +1,6 @@
+[project]
+name = "tip-splitter"
+version = "0.2.0"
+description = "A tiny CLI that splits a restaurant bill fairly, tip included"
+requires-python = ">=3.9"
+license = { text = "MIT" }

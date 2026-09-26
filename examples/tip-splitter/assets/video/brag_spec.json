@@ -1,5 +1,5 @@
 {
-  "title": "Agentic-ReadMe-Creator Launch Video",
+  "title": "tip-splitter Launch Video",
   "duration_seconds": 20,
   "target_resolution": "1920x1080",
   "framerate": 30,
@@ -10,36 +10,36 @@
       "timecode": "00:00.0 - 00:03.0",
       "duration_seconds": 3.0,
       "title": "Hook: the problem",
-      "narration": "Writes your README from your code, then fails the build if the two ever disagree.",
-      "visual": "Show the pain a stranger recognises, before Agentic-ReadMe-Creator is named. No logo, no architecture."
+      "narration": "A tiny CLI that splits a restaurant bill fairly, tip included.",
+      "visual": "Show the pain a stranger recognises, before tip-splitter is named. No logo, no architecture."
     },
     {
       "timecode": "00:03.0 - 00:06.5",
       "duration_seconds": 3.5,
       "title": "Reveal",
-      "narration": "Agentic-ReadMe-Creator. A verified, media-rich README pipeline grounded in real project runs.",
-      "visual": "Agentic-ReadMe-Creator wordmark with the one-line description."
+      "narration": "tip-splitter. A tiny CLI that splits a restaurant bill fairly, tip included.",
+      "visual": "tip-splitter wordmark with the one-line description."
     },
     {
       "timecode": "00:06.5 - 00:11.5",
       "duration_seconds": 5.0,
       "title": "The real run",
-      "narration": "One command: agentic-readme run path/to/your-project.",
-      "visual": "Terminal types `agentic-readme run path/to/your-project` and shows its real output (captured in facts.json: `Usage: cli.py [OPTIONS] COMMAND [ARGS]...`)"
+      "narration": "One command: python3 cli.py.",
+      "visual": "Terminal types `python3 cli.py` and shows its real output (captured in facts.json: `usage: cli.py [-h] [--tip TIP] total people`)"
     },
     {
       "timecode": "00:11.5 - 00:16.5",
       "duration_seconds": 5.0,
       "title": "Proof",
-      "narration": "Automated test suite with 48 passing tests verifying core system invariants. 3800 lines of code in the project source.",
+      "narration": "Automated test suite with 3 passing tests verifying core system invariants. 36 lines of code in the project source.",
       "visual": "Claims appear one by one, each with the file that proves it."
     },
     {
       "timecode": "00:16.5 - 00:20.0",
       "duration_seconds": 3.5,
       "title": "How to get it",
-      "narration": "pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git",
-      "visual": "Install command and github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator."
+      "narration": "pip install -e .",
+      "visual": "Install command and pip install -e .."
     }
   ],
   "rules": [

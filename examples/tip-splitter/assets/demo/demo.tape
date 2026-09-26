@@ -1,4 +1,4 @@
-# VHS Tape for Agentic-ReadMe-Creator
+# VHS Tape for tip-splitter
 # Output target: hero GIF under 5MB for GitHub README performance
 Output assets/demo/hero-demo.gif
 Output assets/demo/hero-demo.mp4
@@ -14,11 +14,19 @@ Set Framerate 30
 Sleep 1s
 
 # Run verified quickstart commands
-Type "pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git"
+Type "git clone <repo-url> && cd tip-splitter"
 Sleep 500ms
 Enter
 Sleep 2s
-Type "agentic-readme run path/to/your-project"
+Type "pip install -e ."
+Sleep 500ms
+Enter
+Sleep 2s
+Type "pytest"
+Sleep 500ms
+Enter
+Sleep 2s
+Type "python3 cli.py"
 Sleep 500ms
 Enter
 Sleep 2s

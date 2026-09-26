@@ -1,24 +1,24 @@
 version: '1.0'
 repo_name: Agentic-ReadMe-Creator
-target_audience: Developers, ML engineers, and technical evaluators
-hook: Tired of opaque estimates and manual bottlenecks in a verified, media-rich readme
-  pipeline grounded in real project runs?
+target_audience: Developers shipping a repo, plus the recruiters and students who
+  read it
+hook: Writes your README from your code, then fails the build if the two ever disagree.
 problem: Traditional workflows in this domain suffer from opaque estimates, unverified
   assumptions, and documentation that drifts out of sync as code and dependencies
   evolve.
-solution: Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline grounded
-  in real project runs, grounding system execution and performance in deterministic
-  data and verified automated test invariants.
+solution: 'Agentic-ReadMe-Creator: A verified, media-rich README pipeline grounded
+  in real project runs. Every badge and number on this page is checked against facts.json,
+  produced from the project''s own code and test runs.'
 key_claims:
-- claim: Automated test suite with 46 passing tests verifying core system invariants.
+- claim: Automated test suite with 48 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 46
+    test_count: 48
   verified: true
-- claim: Modular architecture spanning 4991 lines of code across pipeline stages.
+- claim: 3800 lines of code in the project source.
   evidence_file: src/
   metrics:
-    loc: 4991
+    loc: 3800
   verified: true
 - claim: Open source distribution under the MIT license.
   evidence_file: LICENSE
@@ -42,35 +42,28 @@ key_claims:
   verified: true
 architecture_nodes:
 - id: entrypoint
-  label: CLI / Entrypoint (cli.py)
+  label: CLI / MCP / Skill
   role: entrypoint
   source_file: src/agentic_readme/cli.py
   technologies: []
-- id: integrations
-  label: Integrations Module
+- id: ground
+  label: 'Ground: facts.json'
   role: pipeline_stage
-  source_file: integrations
+  source_file: src/agentic_readme/ground
   technologies: []
-- id: skills
-  label: Skills Module
+- id: produce
+  label: 'Produce: docs & media'
   role: pipeline_stage
-  source_file: skills
+  source_file: src/agentic_readme/produce
   technologies: []
-- id: src
-  label: Src Module
+- id: verify
+  label: 'Verify: claim audit'
   role: pipeline_stage
-  source_file: src
-  technologies: []
-- id: agentic_readme
-  label: Agentic Readme Module
-  role: pipeline_stage
-  source_file: src/agentic_readme
+  source_file: src/agentic_readme/verify
   technologies: []
 quickstart_commands:
-- git clone https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git && cd Agentic-ReadMe-Creator
-- pip install -e .
-- pytest
-- python3 src/agentic_readme/cli.py
+- pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git
+- agentic-readme run path/to/your-project
 deliberate_omissions:
 - 'No unverified claims: every figure is mechanically checked against executable outputs
   in facts.json'
@@ -79,4 +72,4 @@ deliberate_omissions:
 - No marketing buzzwords or generic template greetings
 evidence_summary: Every figure above is verified against source code and execution
   logs in facts.json
-created_at: '2026-09-26T08:16:09.697843+00:00'
+created_at: '2026-09-26T09:25:28.949332+00:00'

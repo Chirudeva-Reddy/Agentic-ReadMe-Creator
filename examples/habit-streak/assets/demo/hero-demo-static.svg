@@ -5,22 +5,22 @@
   <circle cx="25" cy="25" r="6" fill="#f38ba8"/>
   <circle cx="45" cy="25" r="6" fill="#f9e2af"/>
   <circle cx="65" cy="25" r="6" fill="#a6e3a1"/>
-  <text x="400" y="28" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#6c7086" text-anchor="middle">Agentic-ReadMe-Creator — bash — 80x24</text>
+  <text x="400" y="28" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#6c7086" text-anchor="middle">habit-streak — bash — 80x24</text>
   <line x1="0" y1="42" x2="800" y2="42" stroke="#313244" stroke-width="1"/>
 
   <!-- Terminal content -->
   <text x="30" y="80" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#cdd6f4">
-    <tspan fill="#a6e3a1">$ </tspan>agentic-readme run path/to/your-project<tspan fill="#a6e3a1"> ▋</tspan>
+    <tspan fill="#a6e3a1">$ </tspan>npm start<tspan fill="#a6e3a1"> ▋</tspan>
   </text>
-  <text x="30" y="115" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#89b4fa">[1/3] CLI / MCP / Skill</text>
+  <text x="30" y="115" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#89b4fa">[1/3] CLI / Entrypoint (index.js)</text>
   <text x="50" y="140" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6adc8">✔ Initialized verified components</text>
   <text x="50" y="165" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6adc8">✔ Grounded in real inputs and configuration</text>
 
-  <text x="30" y="205" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#89b4fa">[2/3] Ground: facts.json</text>
+  <text x="30" y="205" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#89b4fa">[2/3] Pipeline Execution</text>
   <text x="50" y="230" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6adc8">✔ Processing pipeline stages executed without drift</text>
   <text x="50" y="255" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6adc8">✔ Stage output verified against deterministic facts</text>
 
-  <text x="30" y="295" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">[3/3] Verify: claim audit</text>
-  <text x="50" y="320" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">✔ Automated test suite with 48 passing tests verifying core system invariants.</text>
-  <text x="50" y="345" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">✔ 3800 lines of code in the project source.</text>
+  <text x="30" y="295" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">[3/3] Verification &amp; Output</text>
+  <text x="50" y="320" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">✔ Automated test suite with 2 passing tests verifying core system invariants.</text>
+  <text x="50" y="345" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6e3a1">✔ Open source distribution under the MIT license.</text>
 </svg>
