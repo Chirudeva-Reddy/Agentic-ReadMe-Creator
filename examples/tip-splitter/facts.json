@@ -1,6 +1,6 @@
 {
   "repo_name": "tip-splitter",
-  "generated_at": "2026-09-26T09:58:32.003755+00:00",
+  "generated_at": "2026-09-26T11:22:21.290172+00:00",
   "facts": {
     "python_version": {
       "key": "python_version",
@@ -10,7 +10,7 @@
       "description": "Supported Python version requirement",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004416+00:00"
+      "verified_at": "2026-09-26T11:22:21.290646+00:00"
     },
     "project_version": {
       "key": "project_version",
@@ -20,7 +20,7 @@
       "description": "Project release version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004454+00:00"
+      "verified_at": "2026-09-26T11:22:21.290684+00:00"
     },
     "project_description": {
       "key": "project_description",
@@ -30,7 +30,7 @@
       "description": "Project summary description",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004485+00:00"
+      "verified_at": "2026-09-26T11:22:21.290718+00:00"
     },
     "python_file_count": {
       "key": "python_file_count",
@@ -40,7 +40,7 @@
       "description": "Number of Python source files",
       "unit": "files",
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004810+00:00"
+      "verified_at": "2026-09-26T11:22:21.291634+00:00"
     },
     "python_loc": {
       "key": "python_loc",
@@ -50,7 +50,7 @@
       "description": "Lines of Python code",
       "unit": "lines",
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004813+00:00"
+      "verified_at": "2026-09-26T11:22:21.291638+00:00"
     },
     "license": {
       "key": "license",
@@ -60,7 +60,7 @@
       "description": "Software license",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.004852+00:00"
+      "verified_at": "2026-09-26T11:22:21.291798+00:00"
     },
     "test_count": {
       "key": "test_count",
@@ -70,7 +70,7 @@
       "description": "Static test definition count (AST/regex collection fallback)",
       "unit": "tests",
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.242074+00:00"
+      "verified_at": "2026-09-26T11:22:21.481717+00:00"
     },
     "cli_help_output": {
       "key": "cli_help_output",
@@ -80,7 +80,7 @@
       "description": "Verified CLI help output from live execution",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.261692+00:00"
+      "verified_at": "2026-09-26T11:22:21.502306+00:00"
     },
     "headless_run_status": {
       "key": "headless_run_status",
@@ -90,7 +90,7 @@
       "description": "Project successfully ran headless",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T09:58:32.261714+00:00"
+      "verified_at": "2026-09-26T11:22:21.502330+00:00"
     }
   }
 }

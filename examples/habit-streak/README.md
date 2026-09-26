@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <b>habit-streak: Track daily habits and see your longest streak. Every badge and number on this page is checked against facts.json, produced from the project's own code and test runs.</b>
+  <b>habit-streak: Track daily habits and see your longest streak.</b>
 </p>
 
 ---

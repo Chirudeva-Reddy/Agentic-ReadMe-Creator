@@ -140,3 +140,14 @@ def test_facts_extractor_counts_node_test_cases_not_files(tmp_path: Path):
     ledger = FactsExtractor(tmp_path).extract_all()
 
     assert ledger.get_fact("test_count").value == 2
+
+
+def test_architecture_nodes_do_not_invent_a_domain(tmp_path: Path):
+    """A plain data/ folder must not become 'Pricing Storage' or similar invented claims."""
+    (tmp_path / "cli.py").write_text("print('hi')", encoding="utf-8")
+    (tmp_path / "data").mkdir()
+
+    labels = [n.label for n in RepoAnalyst(tmp_path).analyze().architecture_nodes]
+
+    assert "Data Files" in labels
+    assert not any("Pricing" in label for label in labels)

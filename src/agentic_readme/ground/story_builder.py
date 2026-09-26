@@ -49,8 +49,7 @@ class StoryBuilder:
                 f"and documentation that drifts out of sync as code and dependencies evolve."
             )
             solution = (
-                f"{repo_name}: {desc.rstrip('.')}. Every badge and number on this page is "
-                f"checked against facts.json, produced from the project's own code and test runs."
+                f"{repo_name}: {desc.rstrip('.')}."
             )
         else:
             problem = (

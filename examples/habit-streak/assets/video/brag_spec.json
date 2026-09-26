@@ -39,7 +39,7 @@
       "duration_seconds": 3.5,
       "title": "How to get it",
       "narration": "npm install",
-      "visual": "Install command and npm install."
+      "visual": "Install command `npm install`."
     }
   ],
   "rules": [

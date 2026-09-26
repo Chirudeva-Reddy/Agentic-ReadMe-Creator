@@ -200,13 +200,14 @@ class RepoAnalyst:
                 )
             )
 
+        # Neutral labels only: the directory name is all we know, so don't imply a domain
         known_roles = {
             "ground": ("Grounding Engine", "pipeline_stage"),
             "produce": ("Asset Producers", "pipeline_stage"),
             "verify": ("Claim Auditor & Verifiers", "guardrail"),
-            "models": ("Inference & Vision Models", "pipeline_stage"),
-            "triage": ("Triage & Decision Engine", "pipeline_stage"),
-            "data": ("Datasets & Pricing Storage", "storage"),
+            "models": ("Models", "pipeline_stage"),
+            "triage": ("Triage Logic", "pipeline_stage"),
+            "data": ("Data Files", "storage"),
             "api": ("Service API Layer", "entrypoint"),
             "core": ("Core Processing Engine", "pipeline_stage"),
             "services": ("Business Services", "pipeline_stage"),

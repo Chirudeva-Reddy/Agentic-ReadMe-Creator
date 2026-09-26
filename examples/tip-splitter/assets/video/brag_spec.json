@@ -39,7 +39,7 @@
       "duration_seconds": 3.5,
       "title": "How to get it",
       "narration": "pip install -e .",
-      "visual": "Install command and pip install -e .."
+      "visual": "Install command `pip install -e .`."
     }
   ],
   "rules": [

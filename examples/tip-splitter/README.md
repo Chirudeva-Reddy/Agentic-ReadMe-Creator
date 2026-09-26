@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <b>tip-splitter: A tiny CLI that splits a restaurant bill fairly, tip included. Every badge and number on this page is checked against facts.json, produced from the project's own code and test runs.</b>
+  <b>tip-splitter: A tiny CLI that splits a restaurant bill fairly, tip included.</b>
 </p>
 
 ---
