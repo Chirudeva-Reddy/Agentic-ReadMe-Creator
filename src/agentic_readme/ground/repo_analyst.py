@@ -216,12 +216,22 @@ class RepoAnalyst:
         # Check top-level and src/ subdirectories
         candidates = []
         for p in self.repo_path.iterdir():
-            if p.is_dir() and not p.name.startswith(".") and p.name not in ("tests", "test", "venv", ".venv", "docs", "assets", "dist", "build"):
+            if (
+                p.is_dir()
+                and not p.name.startswith(".")
+                and not p.name.endswith(".egg-info")
+                and p.name not in ("tests", "test", "venv", ".venv", "docs", "assets", "dist", "build", "__pycache__")
+            ):
                 candidates.append(p)
         src_dir = self.repo_path / "src"
         if src_dir.exists() and src_dir.is_dir():
             for p in src_dir.iterdir():
-                if p.is_dir() and not p.name.startswith("."):
+                if (
+                    p.is_dir()
+                    and not p.name.startswith(".")
+                    and not p.name.endswith(".egg-info")
+                    and p.name not in ("tests", "test", "docs", "dist", "build", "__pycache__")
+                ):
                     candidates.append(p)
 
         seen_ids = set()

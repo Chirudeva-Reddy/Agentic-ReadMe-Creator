@@ -14,7 +14,13 @@ from typing import Any, Dict, Optional, Tuple
 
 from rich.console import Console
 
-from agentic_readme.core.models import FactsLedger, StorySpec, VerificationReport
+from agentic_readme.core.models import (
+    FactsLedger,
+    FindingCategory,
+    FindingSeverity,
+    StorySpec,
+    VerificationReport,
+)
 from agentic_readme.ground.repo_analyst import RepoAnalyst
 from agentic_readme.ground.story_builder import StoryBuilder
 from agentic_readme.produce.demo_agent import DemoAgent
@@ -23,19 +29,23 @@ from agentic_readme.produce.video_agent import VideoAgent
 from agentic_readme.produce.writer_agent import WriterAgent
 from agentic_readme.verify.optimizer import EvaluatorOptimizer
 
-console = Console()
-
 
 class PipelineRunner:
     """Coordinates execution across Phase 0, Phase 1, and Phase 2."""
 
-    def __init__(self, repo_path: Path, output_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        repo_path: Path,
+        output_dir: Optional[Path] = None,
+        console: Optional[Console] = None,
+    ):
         self.repo_path = Path(repo_path).resolve()
         self.output_dir = Path(output_dir or self.repo_path).resolve()
+        self.console = console or Console(stderr=True)
 
     def phase_0_ground(self, target_audience: Optional[str] = None, custom_hook: Optional[str] = None) -> Tuple[StorySpec, FactsLedger]:
         """Phase 0: Ground repo facts and narrative into immutable contracts."""
-        console.print(f"[bold cyan][Phase 0: GROUND][/bold cyan] Analyzing repository at {self.repo_path}...")
+        self.console.print(f"[bold cyan][Phase 0: GROUND][/bold cyan] Analyzing repository at {self.repo_path}...")
 
         analyst = RepoAnalyst(self.repo_path)
         analysis = analyst.analyze()
@@ -51,35 +61,35 @@ class PipelineRunner:
         story.save_yaml(story_file)
         ledger.save(facts_file)
 
-        console.print(f"[green]✔ Locked contracts created:[/green]")
-        console.print(f"  - Story Spec: [bold]{story_file}[/bold]")
-        console.print(f"  - Facts Ledger: [bold]{facts_file}[/bold] ({len(ledger.facts)} facts recorded)")
+        self.console.print(f"[green]✔ Locked contracts created:[/green]")
+        self.console.print(f"  - Story Spec: [bold]{story_file}[/bold]")
+        self.console.print(f"  - Facts Ledger: [bold]{facts_file}[/bold] ({len(ledger.facts)} facts recorded)")
 
         return story, ledger
 
     def phase_1_produce(self, story: StorySpec, ledger: FactsLedger) -> Dict[str, Any]:
         """Phase 1: Fan-out producers reading immutable story and facts."""
-        console.print(f"[bold cyan][Phase 1: PRODUCE][/bold cyan] Generating assets from locked story & facts...")
+        self.console.print(f"[bold cyan][Phase 1: PRODUCE][/bold cyan] Generating assets from locked story & facts...")
 
         # 1. Diagram Agent
         diagram_agent = DiagramAgent(self.output_dir)
         diagram_assets = diagram_agent.produce(story, ledger)
-        console.print("  [green]✔ Diagram Agent:[/green] generated .excalidraw + light/dark SVGs")
+        self.console.print("  [green]✔ Diagram Agent:[/green] generated .excalidraw + light/dark SVGs")
 
         # 2. Demo Agent
         demo_agent = DemoAgent(self.output_dir)
         demo_assets = demo_agent.produce(story, ledger)
-        console.print("  [green]✔ Demo Agent:[/green] generated VHS script + hero asset")
+        self.console.print("  [green]✔ Demo Agent:[/green] generated VHS script + hero asset")
 
         # 3. Video Agent
         video_agent = VideoAgent(self.output_dir)
         video_assets = video_agent.produce(story, ledger)
-        console.print("  [green]✔ Video Agent:[/green] generated /brag 20s spec + scene table")
+        self.console.print("  [green]✔ Video Agent:[/green] generated /brag 20s spec + scene table")
 
         # 4. Writer Agent
         writer_agent = WriterAgent(self.output_dir)
         readme_path = writer_agent.produce(story, ledger)
-        console.print("  [green]✔ Writer Agent:[/green] generated candidate README.md")
+        self.console.print("  [green]✔ Writer Agent:[/green] generated candidate README.md")
 
         return {
             "diagrams": diagram_assets,
@@ -88,18 +98,31 @@ class PipelineRunner:
             "readme": readme_path,
         }
 
-    def phase_2_verify(self, story: StorySpec, ledger: FactsLedger) -> Tuple[VerificationReport, bool]:
+    def phase_2_verify(self, story: Optional[StorySpec], ledger: FactsLedger) -> Tuple[VerificationReport, bool]:
         """Phase 2: Evaluator-Optimizer loop verifying cross-asset facts and rendering."""
-        console.print(f"[bold cyan][Phase 2: VERIFY][/bold cyan] Running cross-asset verification & claim auditing...")
+        self.console.print(f"[bold cyan][Phase 2: VERIFY][/bold cyan] Running cross-asset verification & claim auditing...")
 
         readme_path = self.output_dir / "README.md"
+        if not readme_path.exists():
+            report = VerificationReport(passed=False)
+            report.add_finding(
+                category=FindingCategory.RENDER_ISSUE,
+                severity=FindingSeverity.FATAL,
+                message=f"Target README.md does not exist at {readme_path}. Generate README first or run produce.",
+                location=str(readme_path),
+                expected="Existing README.md",
+                actual="File not found",
+                suggested_fix="Run 'agentic-readme produce' or 'agentic-readme run' to generate README.md.",
+            )
+            return report, False
+
         optimizer = EvaluatorOptimizer(self.output_dir, ledger)
         report, passed = optimizer.run_loop(readme_path, story, max_rounds=2)
 
         if passed:
-            console.print(f"[green]✔ Verification PASSED[/green] ({report.facts_checked} facts checked, 0 fatal bugs)")
+            self.console.print(f"[green]✔ Verification PASSED[/green] ({report.facts_checked} facts checked, 0 fatal bugs)")
         else:
-            console.print(f"[yellow]⚠ Verification finished with {report.fatal_count} fatal findings[/yellow]")
+            self.console.print(f"[yellow]⚠ Verification finished with {report.fatal_count} fatal findings[/yellow]")
 
         return report, passed
 
@@ -110,7 +133,7 @@ class PipelineRunner:
 
         # Human Gate
         if not auto_approve_gate:
-            console.print("[bold yellow]⏸ HUMAN GATE: Please inspect story.yaml and facts.json before continuing.[/bold yellow]")
+            self.console.print("[bold yellow]⏸ HUMAN GATE: Please inspect story.yaml and facts.json before continuing.[/bold yellow]")
 
         # Phase 1
         produced_assets = self.phase_1_produce(story, ledger)

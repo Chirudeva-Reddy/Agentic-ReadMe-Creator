@@ -116,6 +116,40 @@ class StoryBuilder:
                 )
             )
 
+        # Integration Claims: Claude skill, MCP server, GPT schemas
+        skill_fact = ledger.get_fact("skill")
+        if skill_fact:
+            claims.append(
+                ClaimItem(
+                    claim="Claude Code and Claude Agent SDK skill specification.",
+                    evidence_file=skill_fact.source_file,
+                    metrics={"skill": skill_fact.value},
+                    verified=True,
+                )
+            )
+
+        protocol_fact = ledger.get_fact("protocol")
+        if protocol_fact:
+            claims.append(
+                ClaimItem(
+                    claim="Model Context Protocol (MCP) server configuration.",
+                    evidence_file=protocol_fact.source_file,
+                    metrics={"protocol": protocol_fact.value},
+                    verified=True,
+                )
+            )
+
+        tools_fact = ledger.get_fact("tools_schema")
+        if tools_fact:
+            claims.append(
+                ClaimItem(
+                    claim="OpenAI Function Calling and Custom GPT Action schemas.",
+                    evidence_file=tools_fact.source_file,
+                    metrics={"tools_schema": tools_fact.value},
+                    verified=True,
+                )
+            )
+
         # Quickstart commands
         quickstart: List[str] = []
         if self.analysis.primary_language == "Python":

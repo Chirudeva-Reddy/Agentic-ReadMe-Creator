@@ -65,3 +65,122 @@ def test_two():
     assert "tests-2%20passed" in readme_text
     assert "architecture.excalidraw" in readme_text
     assert "## Evidence & Ground Truth" in readme_text
+
+    # 7. Assert MCP server and Agentic Skill integrations
+    import json
+    import yaml
+    from agentic_readme.mcp import handle_request, TOOLS
+
+    # Test MCP initialize
+    init_res = handle_request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+    assert init_res["result"]["protocolVersion"] == "2024-11-05"
+    assert init_res["result"]["serverInfo"]["name"] == "agentic-readme"
+
+    # Test MCP tools/list
+    tools_res = handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+    tool_names = [t["name"] for t in tools_res["result"]["tools"]]
+    assert "agentic_readme_audit" in tool_names
+    assert "agentic_readme_ground" in tool_names
+    assert "agentic_readme_produce" in tool_names
+    assert "agentic_readme_verify" in tool_names
+    assert "agentic_readme_run" in tool_names
+
+    # Test MCP tools/call audit on the generated sample repo
+    audit_res = handle_request({
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {
+            "name": "agentic_readme_audit",
+            "arguments": {
+                "readme_path": str(repo_dir / "README.md"),
+                "facts_file": str(repo_dir / "facts.json"),
+            },
+        },
+    })
+    assert audit_res["result"]["isError"] is False
+    assert "Audit Result: PASSED" in audit_res["result"]["content"][0]["text"]
+
+    # Verify Claude skill definition file exists and has valid frontmatter
+    skill_file = Path(__file__).resolve().parent.parent / "skills" / "agentic-readme" / "SKILL.md"
+    assert skill_file.exists()
+    content = skill_file.read_text(encoding="utf-8")
+    parts = content.split("---")
+    frontmatter = yaml.safe_load(parts[1])
+    assert frontmatter["name"] == "agentic-readme"
+    assert "facts.json" in frontmatter["description"]
+
+    # Verify mcp.json configuration
+    mcp_config_file = Path(__file__).resolve().parent.parent / "mcp.json"
+    assert mcp_config_file.exists()
+    mcp_cfg = json.loads(mcp_config_file.read_text(encoding="utf-8"))
+    assert "agentic-readme" in mcp_cfg["mcpServers"]
+    assert mcp_cfg["mcpServers"]["agentic-readme"]["args"] == ["mcp"]
+
+    # Verify OpenAI tools schema
+    openai_tools_file = Path(__file__).resolve().parent.parent / "integrations" / "gpt" / "openai_tools.json"
+    assert openai_tools_file.exists()
+    gpt_tools = json.loads(openai_tools_file.read_text(encoding="utf-8"))
+    assert len(gpt_tools) == 5
+    gpt_tool_names = [t["function"]["name"] for t in gpt_tools]
+    assert "agentic_readme_audit" in gpt_tool_names
+
+
+def test_mcp_notifications_and_errors():
+    """Verify that JSON-RPC notifications receive no response and unknown methods return -32601."""
+    from agentic_readme.mcp import handle_request
+
+    # Notifications (no id) must return None
+    assert handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
+    assert handle_request({"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {}}) is None
+    assert handle_request({"jsonrpc": "2.0", "method": "some_random_event"}) is None
+
+    # Unknown method with id must return -32601 error
+    err_res = handle_request({"jsonrpc": "2.0", "id": 99, "method": "unknown_tool"})
+    assert err_res["id"] == 99
+    assert err_res["error"]["code"] == -32601
+
+
+def test_mcp_server_stdio_stream_isolation(tmp_path: Path):
+    """Verify that run_mcp_server outputs strictly valid JSON-RPC and does not corrupt stdout."""
+    import io
+    import json
+    from agentic_readme.mcp import run_mcp_server
+
+    input_data = (
+        '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}\n'
+        '{"jsonrpc": "2.0", "method": "notifications/initialized"}\n'
+        '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}\n'
+    )
+    stdin_stream = io.StringIO(input_data)
+    stdout_stream = io.StringIO()
+
+    run_mcp_server(stdin_stream=stdin_stream, stdout_stream=stdout_stream)
+
+    lines = [line.strip() for line in stdout_stream.getvalue().splitlines() if line.strip()]
+    assert len(lines) == 2  # initialize response and tools/list response; notification ignored
+
+    # Every single line must parse as valid JSON
+    msg1 = json.loads(lines[0])
+    assert msg1["id"] == 1
+    assert "protocolVersion" in msg1["result"]
+
+    msg2 = json.loads(lines[1])
+    assert msg2["id"] == 2
+    assert len(msg2["result"]["tools"]) == 5
+
+
+def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
+    """Verify that phase_2_verify reports a fatal finding instead of crashing when README.md is missing."""
+    from agentic_readme.core.models import FactsLedger
+    from agentic_readme.core.runner import PipelineRunner
+
+    ledger = FactsLedger(repo_name="empty-repo")
+    runner = PipelineRunner(tmp_path, output_dir=tmp_path)
+
+    report, passed = runner.phase_2_verify(None, ledger)
+    assert passed is False
+    assert report.fatal_count == 1
+    assert "README.md does not exist" in report.findings[0].message
+
+

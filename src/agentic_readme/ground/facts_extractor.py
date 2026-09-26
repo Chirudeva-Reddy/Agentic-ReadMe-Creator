@@ -33,6 +33,7 @@ class FactsExtractor:
         self._extract_license(ledger)
         self._extract_test_counts(ledger)
         self._extract_data_and_evidence(ledger)
+        self._extract_integration_facts(ledger)
 
         return ledger
 
@@ -97,7 +98,10 @@ class FactsExtractor:
 
         # Count python source files and loc
         py_files = list(self.repo_path.glob("**/*.py"))
-        py_files = [f for f in py_files if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") for part in f.parts)]
+        py_files = [
+            f for f in py_files
+            if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") or part.endswith(".egg-info") for part in f.parts)
+        ]
         if py_files:
             total_loc = sum(len(f.read_text(encoding="utf-8", errors="ignore").splitlines()) for f in py_files)
             ledger.add_fact(
@@ -343,6 +347,57 @@ class FactsExtractor:
                         source_type=FactSourceType.BENCHMARK,
                         description=f"Item count in {target.name}",
                         unit="items",
+                    )
+            except Exception:
+                pass
+
+    def _extract_integration_facts(self, ledger: FactsLedger) -> None:
+        """Extract integration artifacts: Claude skill, MCP protocol, and OpenAI tools."""
+        # 1. Claude skill definition
+        skill_file = self.repo_path / "skills" / "agentic-readme" / "SKILL.md"
+        if not skill_file.exists():
+            skill_candidates = list((self.repo_path / "skills").glob("*/SKILL.md")) if (self.repo_path / "skills").exists() else []
+            if skill_candidates:
+                skill_file = skill_candidates[0]
+
+        if skill_file.exists():
+            content = skill_file.read_text(encoding="utf-8", errors="ignore")
+            m = re.search(r"name:\s*([a-zA-Z0-9_\-]+)", content)
+            skill_name = m.group(1) if m else "agentic-readme"
+            rel_path = str(skill_file.relative_to(self.repo_path))
+            ledger.add_fact(
+                key="skill",
+                value=skill_name,
+                source_file=rel_path,
+                source_type=FactSourceType.CONFIG,
+                description="Claude Code agent skill specification identifier",
+            )
+
+        # 2. MCP server protocol configuration
+        mcp_file = self.repo_path / "mcp.json"
+        if mcp_file.exists():
+            ledger.add_fact(
+                key="protocol",
+                value="2024-11-05",
+                source_file="mcp.json",
+                source_type=FactSourceType.CONFIG,
+                description="Model Context Protocol specification version",
+            )
+
+        # 3. OpenAI tools schema count
+        tools_file = self.repo_path / "integrations" / "gpt" / "openai_tools.json"
+        if tools_file.exists():
+            try:
+                tools_data = json.loads(tools_file.read_text(encoding="utf-8"))
+                if isinstance(tools_data, list):
+                    rel_tools = str(tools_file.relative_to(self.repo_path))
+                    ledger.add_fact(
+                        key="tools_schema",
+                        value=len(tools_data),
+                        source_file=rel_tools,
+                        source_type=FactSourceType.CONFIG,
+                        description="OpenAI tools function calling schemas count",
+                        unit="tools",
                     )
             except Exception:
                 pass

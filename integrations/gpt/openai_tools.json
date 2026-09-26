@@ -1,0 +1,99 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "agentic_readme_audit",
+      "description": "Mechanically audit a README against facts.json ground truth ledger to detect fact drift, broken badges, leaked internal jargon, and voice issues.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "readme_path": {
+            "type": "string",
+            "description": "Path to the README.md file to audit (default: 'README.md')"
+          },
+          "facts_file": {
+            "type": "string",
+            "description": "Path to the facts.json ground truth ledger (default: 'facts.json')"
+          }
+        },
+        "required": ["readme_path", "facts_file"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "agentic_readme_ground",
+      "description": "Phase 0 Grounding: Inspect target codebase, run test suite, extract deterministic facts, and create story.yaml and facts.json contracts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "repo_path": {
+            "type": "string",
+            "description": "Path to target repository (default: '.')"
+          },
+          "audience": {
+            "type": "string",
+            "description": "Target audience description (e.g. 'Developers, ML engineers')"
+          },
+          "hook": {
+            "type": "string",
+            "description": "Custom pain-first 1-line hook"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "agentic_readme_produce",
+      "description": "Phase 1 Produce: Generate media assets (Excalidraw diagram, theme-aware SVGs, VHS demo script, video specs) and candidate README from locked contracts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dir_path": {
+            "type": "string",
+            "description": "Directory containing story.yaml and facts.json (default: '.')"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "agentic_readme_verify",
+      "description": "Phase 2 Verify: Run Evaluator-Optimizer loop on generated assets to eliminate fact drift, rendering bugs, and AI slop.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dir_path": {
+            "type": "string",
+            "description": "Directory containing README.md, assets/, and facts.json (default: '.')"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "agentic_readme_run",
+      "description": "Run the complete end-to-end 3-phase pipeline (Ground -> Produce -> Verify) on a repository.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "repo_path": {
+            "type": "string",
+            "description": "Path to target repository (default: '.')"
+          },
+          "auto_approve": {
+            "type": "boolean",
+            "description": "Automatically approve Phase 0 contract gate (default: true)"
+          }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,147 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agentic ReadMe Creator API",
+    "description": "Verified, media-rich README generation and verification pipeline grounded in executable facts.",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.yourdomain.com",
+      "description": "API Gateway or Localhost Proxy"
+    }
+  ],
+  "paths": {
+    "/audit": {
+      "post": {
+        "operationId": "auditReadme",
+        "summary": "Audit README against facts ledger",
+        "description": "Audit an existing README against facts.json ground truth to detect fact drift, broken badge evidence links, and voice issues.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "readme_path": { "type": "string", "default": "README.md" },
+                  "facts_file": { "type": "string", "default": "facts.json" }
+                },
+                "required": ["readme_path", "facts_file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audit completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passed": { "type": "boolean" },
+                    "facts_checked": { "type": "integer" },
+                    "fatal_count": { "type": "integer" },
+                    "warning_count": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ground": {
+      "post": {
+        "operationId": "groundRepo",
+        "summary": "Extract deterministic facts and create contracts",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "repo_path": { "type": "string", "default": "." },
+                  "audience": { "type": "string" },
+                  "hook": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Contracts generated" }
+        }
+      }
+    },
+    "/produce": {
+      "post": {
+        "operationId": "produceAssets",
+        "summary": "Produce media assets and candidate README",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dir_path": { "type": "string", "default": "." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Assets produced" }
+        }
+      }
+    },
+    "/verify": {
+      "post": {
+        "operationId": "verifyAssets",
+        "summary": "Run Evaluator-Optimizer verification loop",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dir_path": { "type": "string", "default": "." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Verification report returned" }
+        }
+      }
+    },
+    "/run": {
+      "post": {
+        "operationId": "runPipeline",
+        "summary": "Run end-to-end 3-phase pipeline",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "repo_path": { "type": "string", "default": "." },
+                  "auto_approve": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Pipeline execution complete" }
+        }
+      }
+    }
+  }
+}

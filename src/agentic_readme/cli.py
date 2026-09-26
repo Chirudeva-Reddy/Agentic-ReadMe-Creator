@@ -133,6 +133,13 @@ def run(
         raise typer.Exit(code=1)
 
 
+@app.command()
+def mcp():
+    """Start the Model Context Protocol (MCP) stdio server for Claude, GPT, and Cursor."""
+    from agentic_readme.mcp import run_mcp_server
+    run_mcp_server()
+
+
 def _display_report(report) -> None:
     table = Table(title="Phase 2 Verification Report")
     table.add_column("Category", style="cyan")

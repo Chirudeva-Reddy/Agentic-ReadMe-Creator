@@ -76,6 +76,16 @@ class EvaluatorOptimizer:
                     if finding.actual.isdigit():
                         text = re.sub(rf"\b{finding.actual}\s+(?:passing\s+|unit\s+)?tests?\b", f"{expected_tests} tests", text)
 
+        # Fix fact drift on LOC
+        loc_fact = self.ledger.get_fact("python_loc")
+        if loc_fact:
+            expected_loc = str(loc_fact.value)
+            text = re.sub(r"\bloc:\s*\d+\b", f"loc: {expected_loc}", text)
+            for finding in report.findings:
+                if finding.category == FindingCategory.FACT_DRIFT and finding.actual:
+                    if finding.actual.isdigit() and "lines of code" in finding.message:
+                        text = re.sub(rf"\b{finding.actual}\s+lines of code\b", f"{expected_loc} lines of code", text)
+
         # 2. Fix license badge drift
         lic_fact = self.ledger.get_fact("license")
         if lic_fact:

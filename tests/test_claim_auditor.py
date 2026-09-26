@@ -200,3 +200,52 @@ def test_claim_auditor_catches_broken_badge_evidence_links(tmp_path: Path):
     assert len(broken) == 1
     assert "nonexistent/evidence.json" in broken[0].actual
 
+
+def test_claim_auditor_catches_loc_drift(tmp_path: Path):
+    """Verifies that LOC discrepancies between README and FactsLedger are caught."""
+    ledger = FactsLedger(repo_name="loc-repo")
+    ledger.add_fact("python_loc", 4106, "src/", FactSourceType.SOURCE_CODE)
+
+    readme = tmp_path / "README.md"
+    readme.write_text("""# loc-repo
+Modular architecture spanning 3709 lines of code across pipeline stages.
+
+| Claim | Verified Metric | Source Evidence | Status |
+| :--- | :--- | :--- | :--- |
+| Modular architecture | `loc: 3709` | `src/` | ✅ Verified |
+""", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+
+    loc_findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT and "lines of code" in f.message.lower() or "loc" in f.message.lower()]
+    assert len(loc_findings) >= 1
+    assert any("3709" in f.actual for f in loc_findings)
+    assert any("4106" in f.expected for f in loc_findings)
+    assert report.passed is False
+
+
+def test_claim_auditor_catches_evidence_table_drift(tmp_path: Path):
+    """Flags ungrounded metrics and mismatched values in the Evidence table."""
+    ledger = FactsLedger(repo_name="evidence-repo")
+    ledger.add_fact("test_count", 50, "tests/", FactSourceType.TEST_RUN)
+    ledger.add_fact("protocol", "2024-11-05", "mcp.json", FactSourceType.CONFIG)
+
+    # Table claims 60 tests and an ungrounded metric `unknown_metric: 123`
+    readme = tmp_path / "README.md"
+    readme.write_text("""# evidence-repo
+| Claim | Verified Metric | Source Evidence | Status |
+| :--- | :--- | :--- | :--- |
+| Test suite | `test_count: 60` | `tests/` | ✅ Verified |
+| Unknown metric | `unknown_metric: 123` | `data.json` | ✅ Verified |
+""", encoding="utf-8")
+
+    auditor = ClaimAuditor(ledger)
+    report = auditor.audit(readme)
+
+    findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
+    # Mismatched test_count
+    assert any("60" in (f.actual or "") for f in findings)
+    # Ungrounded unknown_metric
+    assert any("unknown_metric" in f.message for f in findings)
+

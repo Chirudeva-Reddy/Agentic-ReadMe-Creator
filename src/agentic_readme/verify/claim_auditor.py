@@ -43,6 +43,8 @@ class ClaimAuditor:
         self._audit_python_version_drift(readme_text, readme_path, rep)
         self._audit_project_version_drift(readme_text, readme_path, rep)
         self._audit_license_drift(readme_text, readme_path, rep)
+        self._audit_loc_drift(readme_text, readme_path, rep)
+        self._audit_evidence_table(readme_text, readme_path, rep)
         self._audit_all_ledger_numeric_facts(readme_text, readme_path, rep)
 
         # 2. Audit Leaked Internal Jargon in README
@@ -188,6 +190,96 @@ class ClaimAuditor:
                     actual=clean_bm,
                     suggested_fix=f"Align badge with repository license ({expected_lic}).",
                 )
+
+    def _audit_loc_drift(
+        self,
+        readme_text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Catch lines-of-code fact drift between README claims and FactsLedger."""
+        loc_fact = self.ledger.get_fact("python_loc")
+        if not loc_fact:
+            return
+
+        expected_loc = str(loc_fact.value)
+        report.facts_checked += 1
+
+        # Check evidence table: `loc: 3709`
+        table_matches = re.findall(r"\bloc:\s*(\d+)\b", readme_text, re.IGNORECASE)
+        for tm in table_matches:
+            if tm != expected_loc:
+                report.add_finding(
+                    category=FindingCategory.FACT_DRIFT,
+                    severity=FindingSeverity.FATAL,
+                    message=f"Lines of code fact drift in evidence table: claims {tm} LOC, ledger records {expected_loc}.",
+                    location=f"{readme_path.name} (evidence table)",
+                    expected=expected_loc,
+                    actual=tm,
+                    suggested_fix=f"Update table metric to 'loc: {expected_loc}'.",
+                )
+
+        # Check body text: e.g. "spanning 3709 lines of code"
+        text_matches = re.findall(r"\b(\d+)\s+lines of code\b", readme_text, re.IGNORECASE)
+        for tm in text_matches:
+            if tm != expected_loc:
+                report.add_finding(
+                    category=FindingCategory.FACT_DRIFT,
+                    severity=FindingSeverity.FATAL,
+                    message=f"Lines of code fact drift in text: claims {tm} lines of code, ledger records {expected_loc}.",
+                    location=f"{readme_path.name} (body text)",
+                    expected=expected_loc,
+                    actual=tm,
+                    suggested_fix=f"Update '{tm} lines of code' to '{expected_loc} lines of code'.",
+                )
+
+    def _audit_evidence_table(
+        self,
+        readme_text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Verify that every metric claim in the Evidence & Ground Truth table is grounded in facts.json."""
+        row_matches = re.findall(
+            r"\|\s*([^|]+?)\s*\|\s*`([^:`]+):\s*([^`]+)`\s*\|\s*\[?`?([^`\]|]+)`?\]?(?:\([^)]+\))?\s*\|\s*([^|]+)\|",
+            readme_text,
+        )
+        for claim_text, metric_key, metric_val, evidence_file, status in row_matches:
+            metric_key = metric_key.strip()
+            metric_val = metric_val.strip()
+            evidence_file = evidence_file.strip()
+            report.facts_checked += 1
+
+            # Check if metric key exists in ledger
+            fact = self.ledger.get_fact(metric_key)
+            if fact is None:
+                if metric_key == "loc":
+                    fact = self.ledger.get_fact("python_loc")
+                elif metric_key == "tests":
+                    fact = self.ledger.get_fact("test_count")
+
+            if fact is None:
+                report.add_finding(
+                    category=FindingCategory.FACT_DRIFT,
+                    severity=FindingSeverity.WARNING,
+                    message=f"Evidence table metric '{metric_key}: {metric_val}' is not registered in facts.json ledger.",
+                    location=f"{readme_path.name} (evidence table)",
+                    expected=f"Registered fact in facts.json for '{metric_key}'",
+                    actual=f"{metric_key}: {metric_val}",
+                    suggested_fix=f"Register '{metric_key}' in facts.json or extractor.",
+                )
+            else:
+                expected_str = str(fact.value).strip()
+                if metric_val != expected_str:
+                    report.add_finding(
+                        category=FindingCategory.FACT_DRIFT,
+                        severity=FindingSeverity.FATAL,
+                        message=f"Fact drift in evidence table for '{metric_key}': table states '{metric_val}', facts.json has '{expected_str}'.",
+                        location=f"{readme_path.name} (evidence table)",
+                        expected=expected_str,
+                        actual=metric_val,
+                        suggested_fix=f"Update table metric to reflect ledger value ({expected_str}).",
+                    )
 
     def _audit_all_ledger_numeric_facts(
         self,

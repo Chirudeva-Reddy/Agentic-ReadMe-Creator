@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "agentic-readme": {
+      "command": "agentic-readme",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}

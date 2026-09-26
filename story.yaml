@@ -10,20 +10,35 @@ solution: Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline
   in real project runs, grounding system execution and performance in deterministic
   data and verified automated test invariants.
 key_claims:
-- claim: Automated test suite with 32 passing tests verifying core system invariants.
+- claim: Automated test suite with 37 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 32
+    test_count: 37
   verified: true
-- claim: Modular architecture spanning 3709 lines of code across pipeline stages.
+- claim: Modular architecture spanning 4466 lines of code across pipeline stages.
   evidence_file: src/
   metrics:
-    loc: 3709
+    loc: 4466
   verified: true
 - claim: Open source distribution under the MIT license.
   evidence_file: LICENSE
   metrics:
     license: MIT
+  verified: true
+- claim: Claude Code and Claude Agent SDK skill specification.
+  evidence_file: skills/agentic-readme/SKILL.md
+  metrics:
+    skill: agentic-readme
+  verified: true
+- claim: Model Context Protocol (MCP) server configuration.
+  evidence_file: mcp.json
+  metrics:
+    protocol: '2024-11-05'
+  verified: true
+- claim: OpenAI Function Calling and Custom GPT Action schemas.
+  evidence_file: integrations/gpt/openai_tools.json
+  metrics:
+    tools_schema: 5
   verified: true
 architecture_nodes:
 - id: entrypoint
@@ -31,15 +46,20 @@ architecture_nodes:
   role: entrypoint
   source_file: src/agentic_readme/cli.py
   technologies: []
+- id: integrations
+  label: Integrations Module
+  role: pipeline_stage
+  source_file: integrations
+  technologies: []
+- id: skills
+  label: Skills Module
+  role: pipeline_stage
+  source_file: skills
+  technologies: []
 - id: src
   label: Src Module
   role: pipeline_stage
   source_file: src
-  technologies: []
-- id: agentic_readme_creator.egg-info
-  label: Agentic Readme Creator.Egg-Info Module
-  role: pipeline_stage
-  source_file: src/agentic_readme_creator.egg-info
   technologies: []
 - id: agentic_readme
   label: Agentic Readme Module
@@ -59,4 +79,4 @@ deliberate_omissions:
 - No marketing buzzwords or generic template greetings
 evidence_summary: Every figure above is verified against source code and execution
   logs in facts.json
-created_at: '2026-09-25T13:15:48.672704+00:00'
+created_at: '2026-09-26T07:20:50.716472+00:00'
