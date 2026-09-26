@@ -1,0 +1,289 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Agentic-ReadMe-Creator launch</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --fg: #e6edf3; --muted: #8b949e;
+    --term: #1e1e2e; --term-line: #313244; --green: #a6e3a1; --red: #f38ba8; --blue: #89b4fa;
+    --yellow: #f9e2af; --sub: #a6adc8; --dim: #6c7086; --text: #cdd6f4;
+    --sans: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  body { font-family: var(--sans); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  #glow { position: absolute; width: 1600px; height: 1600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(137,180,250,.13), rgba(137,180,250,0) 60%);
+    left: 160px; top: -300px; }
+  #grid { position: absolute; inset: 0; opacity: .35;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 80px 80px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 10%, transparent 70%); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* headline type */
+  .h1 { font-size: 76px; font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+  .h2 { font-size: 44px; font-weight: 600; color: var(--muted); letter-spacing: -.5px; }
+  .red { color: var(--red); } .green { color: var(--green); } .blue { color: var(--blue); }
+
+  /* README card */
+  .card { width: 1040px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 40px 120px rgba(0,0,0,.55); overflow: hidden; position: relative; }
+  .card-bar { height: 56px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; padding: 0 26px;
+    font-family: var(--mono); font-size: 22px; color: var(--muted); }
+  .card-bar b { color: var(--fg); font-weight: 600; }
+  .card-body { padding: 44px 60px 48px; text-align: center; }
+  .card h3 { font-size: 64px; font-weight: 700; letter-spacing: -1px; }
+  .card .tag { margin-top: 14px; font-size: 27px; font-style: italic; color: var(--muted); }
+  .badges { margin-top: 30px; display: flex; gap: 14px; justify-content: center; }
+  .badge { display: inline-flex; font-family: var(--sans); font-size: 26px; border-radius: 6px; overflow: hidden; font-weight: 600; }
+  .badge span { padding: 7px 14px; }
+  .badge .k { background: #555; color: #fff; }
+  .badge .v { color: #fff; transition: none; }
+  #scan { position: absolute; top: 0; bottom: 0; width: 180px; left: -200px;
+    background: linear-gradient(90deg, rgba(243,139,168,0), rgba(243,139,168,.35), rgba(243,139,168,0)); }
+  table.ev { margin: 34px auto 0; border-collapse: collapse; font-size: 24px; text-align: left; }
+  table.ev td { padding: 12px 20px; border-top: 1px solid var(--line); }
+  table.ev td.m { font-family: var(--mono); color: var(--blue); font-size: 22px; }
+  table.ev tr { opacity: 0; }
+
+  /* terminal */
+  .term { position: absolute; background: var(--term); border: 1px solid var(--term-line); border-radius: 16px;
+    box-shadow: 0 40px 120px rgba(0,0,0,.6); font-family: var(--mono); font-size: 29px; color: var(--text); overflow: hidden; }
+  .term .bar { height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: #181825; }
+  .term .dot { width: 15px; height: 15px; border-radius: 50%; }
+  .term .body { padding: 26px 34px; line-height: 1.62; white-space: pre; }
+  .term .ln { opacity: 0; }
+  .prompt { color: var(--green); }
+  .cursor { display: inline-block; width: 13px; height: 28px; background: var(--text); vertical-align: -5px; }
+  .caption { position: absolute; left: 100px; width: 640px; }
+  .caption .h1 { font-size: 64px; }
+  .caption .h2 { margin-top: 22px; font-size: 38px; }
+  .row-hl { background: rgba(166,227,161,.12); border-radius: 6px; }
+  .row-bad { background: rgba(243,139,168,.12); border-radius: 6px; }
+
+  /* outro */
+  .chips { display: flex; gap: 16px; margin-top: 44px; }
+  .chip { font-size: 28px; padding: 12px 24px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); opacity: 0; }
+  .url { margin-top: 30px; font-family: var(--mono); font-size: 34px; color: var(--blue); }
+  .word { font-size: 104px; font-weight: 800; letter-spacing: -3px; }
+  .word .a { color: var(--fg); } .word .b { color: var(--blue); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="grid"></div>
+
+  <!-- S1 HOOK -->
+  <section class="scene center" id="s1">
+    <div class="h1" id="s1l1" style="position:absolute; top:120px;">Your README says 40 tests pass.</div>
+    <div class="h1 red" id="s1l2" style="position:absolute; top:220px;">Your code has 3.</div>
+    <div class="card" id="s1card" style="margin-top:250px;">
+      <div class="card-bar">📄 <b>README.md</b></div>
+      <div class="card-body">
+        <h3>tip-splitter</h3>
+        <div class="tag">A tiny CLI that splits a restaurant bill fairly, tip included.</div>
+        <div class="badges">
+          <span class="badge"><span class="k">license</span><span class="v" id="b1" style="background:#007ec6">Apache</span></span>
+          <span class="badge"><span class="k">python</span><span class="v" style="background:#3776AB">&gt;=3.9</span></span>
+          <span class="badge"><span class="k">tests</span><span class="v" id="b2" style="background:#4c1">40 passed</span></span>
+        </div>
+      </div>
+      <div id="scan"></div>
+    </div>
+  </section>
+
+  <!-- S2 REVEAL -->
+  <section class="scene center" id="s2">
+    <div class="word" id="s2w"><span class="a">Agentic-</span><span class="b">ReadMe</span><span class="a">-Creator</span></div>
+    <div class="h2" id="s2l1" style="margin-top:40px; font-size:50px; color:var(--fg)">Writes your README from your code.</div>
+    <div class="h2" id="s2l2" style="margin-top:14px; font-size:50px;">Then <span class="green">proves every claim.</span></div>
+  </section>
+
+  <!-- S3 RUN -->
+  <section class="scene" id="s3">
+    <div class="caption" style="top:400px;">
+      <div class="h1" id="s3c1">One command.</div>
+      <div class="h2" id="s3c2">Code in.<br>Verified README out.</div>
+    </div>
+    <div class="term" id="s3t" style="left:760px; top:215px; width:1080px; height:640px;">
+      <div class="bar"><div class="dot" style="background:#f38ba8"></div><div class="dot" style="background:#f9e2af"></div><div class="dot" style="background:#a6e3a1"></div></div>
+      <div class="body"><span class="prompt">$ </span><span id="s3cmd"></span><span class="cursor" id="s3cur"></span>
+<span class="ln blue">[Phase 0: GROUND] Analyzing repository...</span>
+<span class="ln green">✔ Locked contracts created</span>
+<span class="ln" style="color:var(--sub)">  - facts.json (23 facts recorded)</span>
+<span class="ln blue">[Phase 1: PRODUCE] Generating assets...</span>
+<span class="ln">  <span class="green">✔ Diagram Agent:</span> .excalidraw + light/dark SVGs</span>
+<span class="ln">  <span class="green">✔ Demo Agent:</span> VHS script + hero asset</span>
+<span class="ln">  <span class="green">✔ Video Agent:</span> /brag 20s spec + scene table</span>
+<span class="ln">  <span class="green">✔ Writer Agent:</span> candidate README.md</span>
+<span class="ln blue">[Phase 2: VERIFY] Cross-asset claim auditing...</span>
+<span class="ln green row-hl" style="font-weight:700">✔ Verification PASSED (23 facts checked, 0 fatal bugs)</span></div>
+    </div>
+  </section>
+
+  <!-- S4 CATCH -->
+  <section class="scene" id="s4">
+    <div class="caption" style="top:380px;">
+      <div class="h1" id="s4c1">Fudge a badge.</div>
+      <div class="h1 red" id="s4c2" style="margin-top:12px">The build fails.</div>
+    </div>
+    <div class="term" id="s4t" style="left:760px; top:165px; width:1080px; height:740px;">
+      <div class="bar"><div class="dot" style="background:#f38ba8"></div><div class="dot" style="background:#f9e2af"></div><div class="dot" style="background:#a6e3a1"></div></div>
+      <div class="body"><span class="ln" style="color:var(--dim)">README.md</span>
+<span class="ln red">- badge/tests-3%20passed</span>
+<span class="ln green">+ badge/tests-40%20passed</span>
+<span class="ln red">- badge/license-MIT-blue</span>
+<span class="ln green">+ badge/license-Apache-blue</span>
+
+<span class="prompt">$ </span><span id="s4cmd"></span><span class="cursor" id="s4cur"></span>
+<span class="ln row-bad"><span class="red" style="font-weight:700">✖ FATAL</span>  Test count badge drift:</span>
+<span class="ln">   badge claims <span class="red">40</span> tests passed,</span>
+<span class="ln">   facts ledger records <span class="green">3</span>.</span>
+<span class="ln row-bad"><span class="red" style="font-weight:700">✖ FATAL</span>  License badge discrepancy:</span>
+<span class="ln">   badge states <span class="red">Apache</span>, LICENSE is <span class="green">MIT</span>.</span>
+<span class="ln" style="color:var(--sub)">23 facts checked. <span class="red">2 fatal errors.</span>  exit 1</span></div>
+    </div>
+  </section>
+
+  <!-- S5 PROOF -->
+  <section class="scene center" id="s5">
+    <div class="h1" id="s5l1" style="position:absolute; top:70px; font-size:68px;">Every badge links to its <span class="green">proof.</span></div>
+    <div class="card" id="s5card" style="margin-top:100px;">
+      <div class="card-bar">📄 <b>README.md</b> <span style="margin-left:auto; color:var(--green)">✔ verified against facts.json</span></div>
+      <div class="card-body" style="padding-top:36px">
+        <h3>tip-splitter</h3>
+        <div class="tag">A tiny CLI that splits a restaurant bill fairly, tip included.</div>
+        <div class="badges">
+          <span class="badge"><span class="k">license</span><span class="v" style="background:#007ec6">MIT</span></span>
+          <span class="badge"><span class="k">python</span><span class="v" style="background:#3776AB">&gt;=3.9</span></span>
+          <span class="badge"><span class="k">tests</span><span class="v" style="background:#4c1">3 passed</span></span>
+        </div>
+        <table class="ev">
+          <tr><td>Automated test suite with 3 passing tests</td><td class="m">test_count: 3</td><td>✅</td></tr>
+          <tr><td>36 lines of code in the project source</td><td class="m">loc: 36</td><td>✅</td></tr>
+          <tr><td>Open source under the MIT license</td><td class="m">license: MIT</td><td>✅</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- S6 OUTRO -->
+  <section class="scene center" id="s6">
+    <div class="word" id="s6w"><span class="a">Agentic-</span><span class="b">ReadMe</span><span class="a">-Creator</span></div>
+    <div class="url" id="s6u">github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator</div>
+    <div class="chips">
+      <div class="chip">CLI</div><div class="chip">Claude Code skill</div><div class="chip">MCP server</div><div class="chip">GPT actions</div>
+    </div>
+  </section>
+</div>
+
+<script>
+// Every frame is a pure function of t (seconds). No timers, no CSS animations.
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, d) => clamp((t - a) / d);
+const out3 = (x) => 1 - Math.pow(1 - x, 3);
+const inOut = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+const SCENES = [["s1", 0, 4.0], ["s2", 4.0, 7.6], ["s3", 7.6, 11.6], ["s4", 11.6, 15.6], ["s5", 15.6, 18.0], ["s6", 18.0, 20.0]];
+
+// element enters at `a`: fade + rise
+function enter(el, t, a, d = .45, dy = 30) {
+  const p = out3(prog(t, a, d));
+  el.style.opacity = p;
+  el.style.transform = `translateY(${(1 - p) * dy}px)`;
+}
+function typeText(el, text, t, a, cps = 26) {
+  el.textContent = text.slice(0, Math.floor(clamp((t - a) * cps, 0, text.length)));
+}
+function lines(scene, t, a, step) {
+  scene.querySelectorAll(".ln").forEach((ln, i) => {
+    const p = out3(prog(t, a + i * step, .2));
+    ln.style.opacity = p;
+  });
+}
+
+window.render = function (t) {
+  // scenes: stagger transitions (old out, then new in) through the background
+  for (const [id, s, e] of SCENES) {
+    const el = $(id);
+    const pin = s === 0 ? 1 : out3(prog(t, s, .35));
+    const pout = e >= 20 ? 0 : inOut(prog(t, e - .3, .3));
+    const vis = t >= s - .01 && t < e + .01;
+    el.style.opacity = vis ? pin * (1 - pout) : 0;
+    el.style.transform = `scale(${1 - pout * .03 + (1 - pin) * .02})`;
+    el.style.filter = pout > 0 ? `blur(${pout * 8}px)` : "none";
+  }
+  // ?gif freezes the background drift so GIF frames only differ where content moves
+  const drift = location.search.includes("gif") ? 0 : t;
+  $("glow").style.transform = `translate(${Math.sin(drift * .35) * 120}px, ${Math.cos(drift * .3) * 60}px)`;
+
+  // S1 hook
+  enter($("s1l1"), t, 0.0, .35, 20);
+  enter($("s1card"), t, 0.15, .5, 60);
+  const scan = prog(t, 1.75, .55);
+  $("scan").style.left = `${-200 + scan * 1300}px`;
+  const flipped = t >= 2.05;
+  $("b2").style.background = flipped ? "#e05d44" : "#4c1";
+  $("b2").textContent = flipped ? "40 ≠ 3" : "40 passed";
+  $("b1").style.background = t >= 2.25 ? "#e05d44" : "#007ec6";
+  $("b1").textContent = t >= 2.25 ? "Apache ≠ MIT" : "Apache";
+  const shake = t > 2.05 && t < 2.4 ? Math.sin(t * 90) * 6 * (1 - prog(t, 2.05, .35)) : 0;
+  $("s1card").style.transform += ` translateX(${shake}px)`;
+  enter($("s1l2"), t, 2.1, .35, 20);
+
+  // S2 reveal
+  const w = out3(prog(t, 4.05, .6));
+  $("s2w").style.opacity = w;
+  $("s2w").style.transform = `translateY(${(1 - w) * 40}px)`;
+  $("s2w").style.filter = `blur(${(1 - w) * 14}px)`;
+  enter($("s2l1"), t, 4.55);
+  enter($("s2l2"), t, 5.25);
+
+  // S3 run
+  enter($("s3c1"), t, 7.7);
+  enter($("s3c2"), t, 8.15);
+  const t3 = out3(prog(t, 7.65, .5));
+  $("s3t").style.opacity = t3;
+  $("s3t").style.transform = `translateX(${(1 - t3) * 80}px)`;
+  typeText($("s3cmd"), "agentic-readme run .", t, 7.95, 30);
+  $("s3cur").style.opacity = t < 8.75 ? (Math.floor(t * 4) % 2 ? 1 : .25) : 0;
+  lines($("s3"), t, 8.8, .2);
+
+  // S4 catch
+  enter($("s4c1"), t, 11.7);
+  enter($("s4c2"), t, 13.35);
+  const t4 = out3(prog(t, 11.65, .5));
+  $("s4t").style.opacity = t4;
+  $("s4t").style.transform = `translateX(${(1 - t4) * 80}px)`;
+  const s4lines = $("s4").querySelectorAll(".ln");
+  // diff lines first, then audit output after the command is typed
+  [11.85, 11.95, 12.05, 12.15, 12.25].forEach((a, i) => (s4lines[i].style.opacity = out3(prog(t, a, .2))));
+  typeText($("s4cmd"), "agentic-readme audit README.md --facts facts.json", t, 12.4, 60);
+  $("s4cur").style.opacity = t < 13.25 ? (Math.floor(t * 4) % 2 ? 1 : .25) : 0;
+  [13.3, 13.42, 13.54, 13.75, 13.87, 14.1].forEach((a, i) => (s4lines[i + 5].style.opacity = out3(prog(t, a, .18))));
+  const jolt = t > 13.3 && t < 13.6 ? Math.sin(t * 110) * 5 * (1 - prog(t, 13.3, .3)) : 0;
+  $("s4t").style.transform += ` translateX(${jolt}px)`;
+
+  // S5 proof
+  enter($("s5l1"), t, 15.7, .4, 20);
+  enter($("s5card"), t, 15.75, .5, 50);
+  $("s5").querySelectorAll("tr").forEach((tr, i) => (tr.style.opacity = out3(prog(t, 16.3 + i * .22, .25))));
+
+  // S6 outro
+  const w6 = out3(prog(t, 18.05, .5));
+  $("s6w").style.opacity = w6;
+  $("s6w").style.transform = `scale(${.94 + w6 * .06})`;
+  enter($("s6u"), t, 18.35, .4, 16);
+  $("s6").querySelectorAll(".chip").forEach((c, i) => enter(c, t, 18.6 + i * .09, .35, 16));
+};
+window.render(0);
+</script>
+</body>
+</html>

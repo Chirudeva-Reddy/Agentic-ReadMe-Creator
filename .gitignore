@@ -41,3 +41,11 @@ htmlcov/
 # Agentic ReadMe outputs / artifacts
 .agentic_readme/
 output/
+
+# Launch video build intermediates (assets/video/src/build.sh)
+assets/video/src/node_modules/
+assets/video/src/frames/
+assets/video/src/gifframes/
+assets/video/src/mp4frames/
+assets/video/src/stills/
+assets/video/src/score.wav

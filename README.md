@@ -1,31 +1,53 @@
 <h1 align="center">Agentic-ReadMe-Creator</h1>
 
 <p align="center">
-  <em>Tired of opaque estimates and manual bottlenecks in a verified, media-rich readme pipeline grounded in real project runs?</em>
+  <em>Writes your README from your code, then fails the build if the two ever disagree.</em>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 46 passed" src="https://img.shields.io/badge/tests-46%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 48 passed" src="https://img.shields.io/badge/tests-48%20passed-success?style=flat-square"></a>
   <a href="skills/agentic-readme/SKILL.md"><img alt="claude skill ready" src="https://img.shields.io/badge/claude%20skill-ready-blueviolet?style=flat-square"></a>
   <a href="mcp.json"><img alt="mcp protocol 2024-11-05" src="https://img.shields.io/badge/mcp-2024--11--05-emerald?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo/hero-demo-static.svg">
-    <img alt="Terminal execution of Agentic-ReadMe-Creator: running verified pipeline, executing test verification, and outputting zero-drift documentation assets." src="assets/demo/hero-demo.svg" width="760">
-  </picture>
+  <a href="assets/video/launch-video.mp4">
+    <picture>
+      <source media="(prefers-reduced-motion: reduce)" srcset="assets/video/launch-poster.jpg">
+      <img alt="20-second launch video. A README badge claims forty tests pass while the code has three, and the badges flip red. Agentic-ReadMe-Creator writes the README from the code: one command runs Ground, Produce, and Verify. Editing a badge to lie makes the audit fail with two fatal errors. The corrected README shows every badge backed by evidence." src="assets/video/launch-video.gif" width="760">
+    </picture>
+  </a>
+  <br>
+  <sub>20 seconds, no sound needed. <a href="assets/video/launch-video.mp4">MP4 with soundtrack</a> · <a href="docs/LAUNCH_VIDEO.md">how it was made</a></sub>
 </p>
 
-<p align="center">
-  <b>Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline grounded in real project runs, grounding system execution and performance in deterministic data and verified automated test invariants.</b>
-</p>
+**What it is:** a command-line tool that reads a code project, records what's actually true about it (how many tests pass, the license, the Python version, what the entrypoints are), and writes a README, diagrams, and a launch-video storyboard from those facts. It then audits the README. If a badge or number doesn't match the code, it exits with an error, so your CI can block the pull request.
 
----
+**Who it's for:** anyone publishing a repository who wants the first page to be both clear and true.
 
-That run is real, and it is the whole pitch: **every claim, badge, and diagram node in this repository is mechanically checked against executable outputs** before PR creation.
+## Start here
+
+| You are a... | Read this | Time |
+| :--- | :--- | :--- |
+| **Recruiter or reviewer** | The video above, then [What this project demonstrates](#what-this-project-demonstrates) | 1 min |
+| **Student or first-time visitor** | [Try it in 60 seconds](#quickstart-try-it-in-60-seconds), then the [examples](examples/) | 5 min |
+| **Non-technical user** | The [step-by-step install guide](docs/INSTALL.md#track-a-never-used-a-terminal): copy and paste, no Python setup needed | 10 min |
+| **Developer** | [Install](#install), then [Architecture](docs/ARCHITECTURE.md) | 5 min |
+| **AI assistant user** (Claude, Cursor, ChatGPT) | [Use it from an assistant](#use-it-from-an-ai-assistant) | 3 min |
+
+## Quickstart: try it in 60 seconds
+
+No install: open this repo in [GitHub Codespaces](https://codespaces.new/Chirudeva-Reddy/Agentic-ReadMe-Creator) and paste into the terminal:
+
+```bash
+pip install -e . && agentic-readme run examples/tip-splitter
+```
+
+It reads the sample project, counts its tests, writes `examples/tip-splitter/README.md`, and verifies it. The run ends with `0 fatal errors`.
+
+Then make that README lie: change its test badge from three to forty and run `agentic-readme audit`. It exits `1` with a fatal "Test count badge drift" finding, which is exactly what a CI check needs. The [3-step walkthrough](examples/README.md#watch-it-catch-a-lie) shows the real output.
 
 ## How it works
 
@@ -33,156 +55,101 @@ That run is real, and it is the whole pitch: **every claim, badge, and diagram n
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/architecture-dark.svg">
     <source media="(prefers-reduced-motion: reduce)" srcset="assets/diagrams/architecture-static.svg">
-    <img alt="Architecture of Agentic-ReadMe-Creator showing pipeline flow across verified components" src="assets/diagrams/architecture.svg" width="760">
+    <img alt="Pipeline: CLI, MCP, or Claude skill entrypoint, then Ground (writes facts.json), then Produce (README and media), then Verify (claim audit)" src="assets/diagrams/architecture.svg" width="760">
   </picture>
 </p>
 
-<sub>Editable diagram source: <a href="assets/diagrams/architecture.excalidraw"><code>assets/diagrams/architecture.excalidraw</code></a></sub>
+1. **Ground.** [`src/agentic_readme/ground/`](src/agentic_readme/ground/) inspects the repo, collects its tests, runs its CLI `--help`, and writes two files: `facts.json` (every number, with the file it came from) and `story.yaml` (the pitch, claims, and quickstart). **Review and edit `story.yaml` here.** It's the human checkpoint.
+2. **Produce.** [`src/agentic_readme/produce/`](src/agentic_readme/produce/) generates the README, Excalidraw diagrams (light, dark, and static SVGs), a [VHS](https://github.com/charmbracelet/vhs) demo script, and a 20-second [/brag](https://github.com/latent-spaces/brag) video storyboard. All of it is built from those two files and nothing else. The CLI doesn't render video: when you use the [Claude Code skill](skills/agentic-readme/SKILL.md), the agent renders the storyboard with `/brag` and `produce` embeds it as the README's hero GIF.
+3. **Verify.** [`src/agentic_readme/verify/`](src/agentic_readme/verify/) checks every badge, number, link, and diagram node against `facts.json`, auto-fixes drift it can fix, flags GitHub rendering problems (like `<video>` tags that won't play), and exits `1` on anything fatal.
 
-## Quickstart
+The diagram above was generated by this tool from this repo's own [`story.yaml`](story.yaml). <sub>Editable source: [`architecture.excalidraw`](assets/diagrams/architecture.excalidraw)</sub>
+
+## Examples
+
+Real runs, with the output committed. Nothing was edited by hand.
+
+| Example | Input | Generated README | Result |
+| :--- | :--- | :--- | :--- |
+| [`tip-splitter`](examples/tip-splitter/) | Python CLI + pytest | [README.md](examples/tip-splitter/README.md) | 23 facts checked, 0 errors |
+| [`habit-streak`](examples/habit-streak/) | Node.js + `node --test` | [README.md](examples/habit-streak/README.md) | 18 facts checked, 0 errors |
+| this repo | Python package, 48 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
+
+See [examples/README.md](examples/README.md) for what each generated file is and how to run them.
+
+## Install
+
+**Not a programmer?** Follow the [copy-and-paste guide](docs/INSTALL.md#track-a-never-used-a-terminal). It installs everything, including Python, in two commands.
+
+**Developers** (Python 3.11+):
+
+```bash
+pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git
+```
+
+Then, inside any project:
+
+```bash
+agentic-readme ground .      # writes facts.json + story.yaml; review story.yaml
+agentic-readme produce .     # writes README.md + assets/  (overwrites README.md!)
+agentic-readme verify .      # audits; exits 1 on fatal drift
+```
+
+`agentic-readme run .` does all three in one step. `agentic-readme audit README.md --facts facts.json` is read-only and works well as a CI gate ([workflow snippet](docs/INSTALL.md#use-it-in-ci)).
+
+To work on the tool itself:
 
 ```bash
 git clone https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git && cd Agentic-ReadMe-Creator
-pip install -e .
-pytest
-python3 src/agentic_readme/cli.py --help
+pip install -e ".[dev]" && pytest
 ```
 
-## Installation & Integration
+## Use it from an AI assistant
 
-### 1. Standard CLI Tool
+| Assistant | Setup | Details |
+| :--- | :--- | :--- |
+| **Claude Code** | Copy [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) to `~/.claude/skills/agentic-readme/`, then ask *"use agentic-readme to write and verify my README"* | [guide](docs/INSTALL.md#claude-code) |
+| **Claude Desktop / Cursor** | Add `{"command": "agentic-readme", "args": ["mcp"]}` under `mcpServers`. This exposes 5 tools. | [MCP guide](integrations/mcp/README.md) |
+| **ChatGPT / OpenAI API** | Function-calling schemas and a Custom GPT OpenAPI spec | [GPT guide](integrations/gpt/README.md) |
+| **Python** | `PipelineRunner(repo_path=".").run_all()` | [runner.py](src/agentic_readme/core/runner.py) |
 
-Install directly in your Python environment or as an isolated tool with `pipx`:
+## What this project demonstrates
 
-```bash
-# Editable install from repository
-pip install -e .
+For reviewers who want the engineering summary:
 
-# Or isolated global CLI installation via pipx
-pipx install .
-```
-
-The CLI provides commands for each pipeline phase:
-
-```bash
-# Run full 3-phase automated pipeline (Ground -> Produce -> Verify)
-agentic-readme run .
-
-# Phase 0: Ground repository facts into story.yaml and facts.json
-agentic-readme ground . --audience "Developers, ML engineers"
-
-# Phase 1: Produce media assets and candidate README from locked contracts
-agentic-readme produce .
-
-# Phase 2: Audit claims, check GitHub rendering rules, and clean voice
-agentic-readme verify .
-
-# Standalone claim audit against ground truth facts ledger
-agentic-readme audit README.md --facts facts.json
-```
-
-### 2. Claude Code & Agent SDK Skill
-
-This repository includes a native skill definition adhering to the Claude agent specification:
-
-- **Evidence Source**: [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) and [`.claude/skills/agentic-readme/SKILL.md`](.claude/skills/agentic-readme/SKILL.md)
-
-#### Claude Code Setup
-
-```bash
-# 1. Install tool in environment
-pip install -e .
-
-# 2. Project-level discovery (already enabled in this repository)
-mkdir -p .claude/skills/agentic-readme
-cp skills/agentic-readme/SKILL.md .claude/skills/agentic-readme/
-
-# Or user-level global discovery
-mkdir -p ~/.claude/skills/agentic-readme
-cp skills/agentic-readme/SKILL.md ~/.claude/skills/agentic-readme/
-```
-
-When Claude Code is asked to write, audit, or verify documentation, it reads `SKILL.md` to run the grounding extractors and verification auditors without manual prompt engineering.
-
-#### Claude Agent SDK (Python)
-
-```python
-from agentic_readme.core.runner import PipelineRunner
-
-runner = PipelineRunner(repo_path=".")
-results = runner.run_all(auto_approve_gate=True)
-print(f"Verified claims: {results['verification_report'].facts_checked}")
-```
-
-### 3. GPT & MCP Tool Integration
-
-Connect OpenAI GPT models, ChatGPT Custom GPTs, Cursor, and MCP-compatible assistants using standard schemas:
-
-- **MCP Configuration**: [`mcp.json`](mcp.json) and [MCP Setup Guide](integrations/mcp/README.md)
-- **OpenAI Tool Schemas**: [`integrations/gpt/openai_tools.json`](integrations/gpt/openai_tools.json)
-- **Custom GPT OpenAPI Specification**: [`integrations/gpt/openapi.json`](integrations/gpt/openapi.json)
-
-#### Model Context Protocol (MCP)
-
-Start the stdio JSON-RPC server:
-
-```bash
-agentic-readme mcp
-```
-
-Configure in Claude Desktop (`claude_desktop_config.json`) or Cursor (`.cursor/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "agentic-readme": {
-      "command": "agentic-readme",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-The server exposes 5 tools: `agentic_readme_audit`, `agentic_readme_ground`, `agentic_readme_produce`, `agentic_readme_verify`, and `agentic_readme_run`.
-
-#### OpenAI Function Calling (Python)
-
-Pass [`integrations/gpt/openai_tools.json`](integrations/gpt/openai_tools.json) directly to OpenAI chat completions:
-
-```python
-import json
-from openai import OpenAI
-from agentic_readme.mcp import execute_tool
-
-client = OpenAI()
-with open("integrations/gpt/openai_tools.json") as f:
-    tools = json.load(f)
-
-response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Audit README.md against facts.json"}],
-    tools=tools,
-)
-```
-
-See the [GPT Integration Guide](integrations/gpt/README.md) for full action routing details.
+- **A staged agent pipeline with a human checkpoint.** Grounding writes locked contracts that the producers can only read, and a verifier loop audits the output ([ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+- **Verification rather than generation.** A claim auditor cross-checks the README, diagrams, and video storyboard against a facts ledger, with deterministic auto-fixes ([`verify/`](src/agentic_readme/verify/)).
+- **Tested.** 48 pytest tests cover grounding, production, auditing, rendering rules, and an end-to-end pipeline run ([`tests/`](tests/)).
+- **Packaged three ways.** A Typer CLI, an MCP JSON-RPC server, and a Claude Code skill, plus OpenAI tool schemas ([`integrations/`](integrations/)).
+- **Uses its own output.** This README, its diagram, and its badges come from the tool's own run on this repo, and the [launch video](docs/LAUNCH_VIDEO.md) shows real output from the examples.
 
 ## Evidence & Ground Truth
 
-> *Every figure above is verified against source code and execution logs in facts.json*
+> *Every figure on this page is checked against [`facts.json`](facts.json), which the tool produced from this repo's source code and test run.*
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 46 passing tests verifying core system invariants. | `test_count: 46` | [`tests`](tests) | ✅ Verified |
-| Modular architecture spanning 4991 lines of code across pipeline stages. | `loc: 4991` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 48 passing tests verifying core system invariants. | `test_count: 48` | [`tests`](tests) | ✅ Verified |
+| 3800 lines of code in the project source. | `loc: 3800` | [`src/`](src/) | ✅ Verified |
 | Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 | Claude Code and Claude Agent SDK skill specification. | `skill: agentic-readme` | [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) | ✅ Verified |
 | Model Context Protocol (MCP) server configuration. | `protocol: 2024-11-05` | [`mcp.json`](mcp.json) | ✅ Verified |
 | OpenAI Function Calling and Custom GPT Action schemas. | `tools_schema: 5` | [`integrations/gpt/openai_tools.json`](integrations/gpt/openai_tools.json) | ✅ Verified |
 
+## Documentation
+
+| Doc | What's in it |
+| :--- | :--- |
+| [INSTALL.md](docs/INSTALL.md) | Beginner, developer, AI-assistant, and Codespaces setup, plus CI and troubleshooting |
+| [examples/](examples/README.md) | Sample runs and the "catch a lie" walkthrough |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | The three phases, contracts, and agents |
+| [LAUNCH_VIDEO.md](docs/LAUNCH_VIDEO.md) | How the video was made, and the first-20-seconds README method |
+| [HOUSE_STYLE.md](docs/HOUSE_STYLE.md) | The README patterns the writer follows |
+| [EVALUATION.md](docs/EVALUATION.md) | The benchmark protocol for evaluating output quality |
+
 ## Deliberately not included
 
-- **No unverified claims: every figure is mechanically checked against executable outputs in facts.json**
-- **No synthetic or staged mock runs: visual assets reflect genuine project execution**
-- **No relative <video> tags in README that fail to render on GitHub**
-- **No marketing buzzwords or generic template greetings**
+- **No unverified claims.** Every figure is checked against executable outputs in facts.json.
+- **No staged runs.** The terminal output in the video and examples comes from real runs.
+- **No relative `<video>` tags,** because GitHub doesn't play them. The video is a GIF that links to the MP4.
+- **No LLM required.** The pipeline is deterministic Python, and assistants call it as a tool.
