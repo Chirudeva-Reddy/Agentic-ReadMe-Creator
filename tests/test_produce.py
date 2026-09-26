@@ -129,7 +129,19 @@ def test_video_agent(tmp_path: Path):
     assert res["scene_table"].exists()
     spec = json.loads(res["spec_file"].read_text(encoding="utf-8"))
     assert spec["duration_seconds"] == 20
-    assert len(spec["scenes"]) == 4
+    assert spec["status"] == "storyboard_only"
+    assert sum(s["duration_seconds"] for s in spec["scenes"]) == 20
+
+    # Problem-first: opens on the hook, names the project only in the reveal
+    hook, reveal = spec["scenes"][0], spec["scenes"][1]
+    assert hook["narration"] == story.hook
+    assert "verified-tool" not in hook["narration"]
+    assert reveal["narration"].startswith("verified-tool")
+
+    # Grounded: proof scene reuses real claims; no tool boilerplate leaks into the user's video
+    assert "52 passing tests verified" in spec["scenes"][3]["narration"]
+    assert "zero-drift" not in res["scene_table"].read_text(encoding="utf-8")
+    assert spec["deliverables"]["gif"] == spec["github_safe_embed"]["preview_gif"] == "assets/video/launch-video.gif"
 
 
 def test_writer_agent_house_style(tmp_path: Path):
@@ -159,3 +171,40 @@ def test_writer_agent_house_style(tmp_path: Path):
     # Check evidence table and deliberate omissions
     assert "## Evidence & Ground Truth" in content
     assert "## Deliberately not included" in content
+
+
+def test_writer_without_launch_video_labels_svg_as_illustration(tmp_path: Path):
+    story, ledger = _create_mock_contracts()
+    content = WriterAgent(tmp_path).produce(story, ledger).read_text(encoding="utf-8")
+
+    assert 'src="assets/demo/hero-demo.svg"' in content
+    assert "not a screen recording" in content
+    assert "launch-video" not in content
+    assert "That run is real" not in content
+
+
+def test_writer_embeds_launch_video_when_rendered(tmp_path: Path):
+    video_dir = tmp_path / "assets" / "video"
+    video_dir.mkdir(parents=True)
+    for name in ("launch-video.gif", "launch-video.mp4", "launch-poster.jpg"):
+        (video_dir / name).write_bytes(b"x")
+
+    story, ledger = _create_mock_contracts()
+    content = WriterAgent(tmp_path).produce(story, ledger).read_text(encoding="utf-8")
+
+    # GIF preview wrapped in a link to the MP4, poster for reduced motion, no <video> tag
+    assert '<a href="assets/video/launch-video.mp4">' in content
+    assert 'src="assets/video/launch-video.gif"' in content
+    assert 'srcset="assets/video/launch-poster.jpg"' in content
+    assert "<video" not in content
+    assert "hero-demo.svg" not in content
+
+
+def test_video_outro_without_git_remote_names_install_once(tmp_path: Path):
+    story, ledger = _create_mock_contracts()
+    story.quickstart_commands = ["pip install -e .", "python3 cli.py"]
+    outro = VideoAgent(tmp_path).produce(story, ledger)["scenes"][-1]
+
+    assert outro["narration"] == "pip install -e ."
+    assert outro["visual"] == "Install command `pip install -e .`."
+    assert "One command: python3 cli.py." == VideoAgent(tmp_path).produce(story, ledger)["scenes"][2]["narration"]

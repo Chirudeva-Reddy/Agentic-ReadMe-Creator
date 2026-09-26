@@ -31,7 +31,7 @@ flowchart TD
         GATE -->|Read-Only| F4[Writer Agent]
 
         F1 --> G1[.excalidraw + Light/Dark SVGs]
-        F2 --> G2[VHS Tape Script + Hero GIF/SVG]
+        F2 --> G2[VHS Tape Script + Illustrated Hero SVG]
         F3 --> G3[/brag 20s Spec + Scene Table]
         F4 --> G4[Candidate README.md]
     end
@@ -77,7 +77,7 @@ All producers receive `story.yaml` and `facts.json` in **read-only** mode. Agent
   - Generates VHS tape scripts (`assets/demo/demo.tape`) with realistic typing pauses and verified quickstart commands.
   - Enforces the hard 5MB ceiling for hero GIFs.
 - **Video Agent**:
-  - Prepares `/brag` 20s launch video configuration (`assets/video/brag_spec.json`) and scene/time breakdown table.
+  - Prepares a problem-first 20s `/brag` storyboard (`assets/video/brag_spec.json`) and scene/time table. It does **not** render video: an AI agent renders it with `/brag-slim` (skill Phase 3), and the Writer Agent embeds `assets/video/launch-video.gif` as the hero once it exists.
   - Enforces GitHub-compatible embed pattern (GIF preview linking to external MP4).
 - **Writer Agent**:
   - Generates `README.md` following the proven house style rubric (`duet` / `body2health`).

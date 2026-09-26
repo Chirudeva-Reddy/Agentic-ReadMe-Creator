@@ -120,3 +120,23 @@ version = "1.0.0"
     assert "documentation pipelines" not in story.problem.lower()
     assert "opaque estimates" in story.problem.lower()
 
+
+def test_facts_extractor_counts_code_under_dotted_parent_dir(tmp_path: Path):
+    """A repo living under a dot-directory (e.g. ~/.projects) must still be counted."""
+    repo = tmp_path / ".projects" / "tip-splitter"
+    repo.mkdir(parents=True)
+    (repo / "cli.py").write_text("print('hi')\nprint('bye')\n", encoding="utf-8")
+
+    ledger = FactsExtractor(repo).extract_all()
+
+    assert ledger.get_fact("python_loc").value == 2
+    assert ledger.get_fact("python_loc").source_file == "."
+
+
+def test_facts_extractor_counts_node_test_cases_not_files(tmp_path: Path):
+    (tmp_path / "package.json").write_text('{"name": "habit-streak", "version": "1.0.0"}', encoding="utf-8")
+    (tmp_path / "streak.test.js").write_text('test("a", () => {});\ntest("b", () => {});\n', encoding="utf-8")
+
+    ledger = FactsExtractor(tmp_path).extract_all()
+
+    assert ledger.get_fact("test_count").value == 2

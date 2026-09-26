@@ -49,8 +49,8 @@ class StoryBuilder:
                 f"and documentation that drifts out of sync as code and dependencies evolve."
             )
             solution = (
-                f"{repo_name} provides {desc.lower()}, grounding system execution and performance "
-                f"in deterministic data and verified automated test invariants."
+                f"{repo_name}: {desc.rstrip('.')}. Every badge and number on this page is "
+                f"checked against facts.json, produced from the project's own code and test runs."
             )
         else:
             problem = (
@@ -97,7 +97,7 @@ class StoryBuilder:
         if loc_fact and len(claims) < 3:
             claims.append(
                 ClaimItem(
-                    claim=f"Modular architecture spanning {loc_fact.value} lines of code across pipeline stages.",
+                    claim=f"{loc_fact.value} lines of code in the project source.",
                     evidence_file=loc_fact.source_file,
                     metrics={"loc": loc_fact.value},
                     verified=True,
@@ -180,7 +180,7 @@ class StoryBuilder:
         # Honest deliberate omissions (house style from duet: 'Deliberately not included')
         omissions = [
             "No unverified claims: every figure is mechanically checked against executable outputs in facts.json",
-            "No synthetic or staged mock runs: visual assets reflect genuine project execution",
+            "No invented numbers: every badge and metric comes from facts.json",
             "No relative <video> tags in README that fail to render on GitHub",
             "No marketing buzzwords or generic template greetings",
         ]
@@ -200,7 +200,7 @@ class StoryBuilder:
 
     def _generate_pain_hook(self, repo_name: str, desc: str = "") -> str:
         if desc:
-            return f"Tired of opaque estimates and manual bottlenecks in {desc.lower()}?"
+            return f"{desc.rstrip('.')}."
         return (
             f"You need a verified, media-rich README grounded in real code runs—not another generic text generator."
         )

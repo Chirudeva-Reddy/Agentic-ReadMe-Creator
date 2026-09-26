@@ -6,6 +6,7 @@ Synthesizes README.md strictly adhering to the house style rubric
 
 from __future__ import annotations
 
+import html
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -58,11 +59,7 @@ class WriterAgent:
                 test_source += "/"
             badges.append(f'<a href="{test_source}"><img alt="tests {test_val} passed" src="https://img.shields.io/badge/tests-{test_val}%20passed-success?style=flat-square"></a>')
 
-        # Alt text describing the hero visual
-        hero_alt = (
-            f"Terminal execution of {story.repo_name}: running verified pipeline, "
-            f"executing test verification, and outputting zero-drift documentation assets."
-        )
+        hero_block = self._hero_block(story)
 
         # Quickstart block
         quickstart_lines = "\n".join(story.quickstart_commands) if story.quickstart_commands else "pip install -e ."
@@ -90,12 +87,7 @@ class WriterAgent:
   {"\n  ".join(badges)}
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo/hero-demo-static.svg">
-    <img alt="{hero_alt}" src="assets/demo/hero-demo.svg" width="760">
-  </picture>
-</p>
+{hero_block}
 
 <p align="center">
   <b>{story.solution}</b>
@@ -103,7 +95,7 @@ class WriterAgent:
 
 ---
 
-That run is real, and it is the whole pitch: **every claim, badge, and diagram node in this repository is mechanically checked against executable outputs** before PR creation.
+**Every badge, number, and diagram node on this page is checked against [`facts.json`](facts.json)**, which was generated from this project's own code and test run.
 
 ## How it works
 
@@ -136,4 +128,40 @@ That run is real, and it is the whole pitch: **every claim, badge, and diagram n
 {omissions_list}
 """
         return readme_text
+
+    def _hero_block(self, story: StorySpec) -> str:
+        """Launch video (GIF linking to MP4) when Phase 3 rendered one, else the illustrated SVG."""
+        video_dir = self.output_dir / "assets" / "video"
+        gif, mp4, poster = (video_dir / n for n in ("launch-video.gif", "launch-video.mp4", "launch-poster.jpg"))
+
+        if gif.exists():
+            alt = html.escape(f"20-second launch video for {story.repo_name}: {story.hook}", quote=True)
+            poster_src = (
+                '\n      <source media="(prefers-reduced-motion: reduce)" srcset="assets/video/launch-poster.jpg">'
+                if poster.exists() else ""
+            )
+            img = f"""<picture>{poster_src}
+      <img alt="{alt}" src="assets/video/launch-video.gif" width="760">
+    </picture>"""
+            if mp4.exists():
+                return f"""<p align="center">
+  <a href="assets/video/launch-video.mp4">
+    {img}
+  </a>
+  <br>
+  <sub>20-second launch video. <a href="assets/video/launch-video.mp4">Watch with sound (MP4)</a></sub>
+</p>"""
+            return f"""<p align="center">
+  {img}
+</p>"""
+
+        alt = html.escape(f"Illustrated terminal preview of the {story.repo_name} quickstart commands.", quote=True)
+        return f"""<p align="center">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo/hero-demo-static.svg">
+    <img alt="{alt}" src="assets/demo/hero-demo.svg" width="760">
+  </picture>
+  <br>
+  <sub>Illustrated preview of the quickstart, not a screen recording. Record the real run with <code>vhs assets/demo/demo.tape</code>.</sub>
+</p>"""
 

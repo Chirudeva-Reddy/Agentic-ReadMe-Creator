@@ -59,8 +59,7 @@ class DemoAgent:
         # Create lightweight starter GIF placeholder (or use SVG)
         # Note: If VHS binary is available in environment, user can run vhs assets/demo/demo.tape
         alt_text = (
-            f"Terminal execution of {story.repo_name}: running verified pipeline, "
-            f"executing test verification, and outputting zero-drift documentation assets."
+            f"Illustrated terminal preview of the {story.repo_name} quickstart commands."
         )
 
         return {

@@ -115,17 +115,20 @@ class FactsExtractor:
                 )
 
         # Count python source files and loc
-        py_files = list(self.repo_path.glob("**/*.py"))
+        # Count only src/ when it exists, so the evidence link covers exactly what was counted
+        src_dir = self.repo_path / "src"
+        py_files = list((src_dir if src_dir.is_dir() else self.repo_path).glob("**/*.py"))
         py_files = [
             f for f in py_files
-            if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") or part.endswith(".egg-info") for part in f.parts)
+            if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") or part.endswith(".egg-info") for part in f.relative_to(self.repo_path).parts)
         ]
         if py_files:
+            src_ref = "src/" if src_dir.is_dir() else "."
             total_loc = sum(len(f.read_text(encoding="utf-8", errors="ignore").splitlines()) for f in py_files)
             ledger.add_fact(
                 key="python_file_count",
                 value=len(py_files),
-                source_file="src/",
+                source_file=src_ref,
                 source_type=FactSourceType.SOURCE_CODE,
                 description="Number of Python source files",
                 unit="files",
@@ -133,7 +136,7 @@ class FactsExtractor:
             ledger.add_fact(
                 key="python_loc",
                 value=total_loc,
-                source_file="src/",
+                source_file=src_ref,
                 source_type=FactSourceType.SOURCE_CODE,
                 description="Lines of Python code",
                 unit="lines",
@@ -255,7 +258,7 @@ class FactsExtractor:
             ledger.add_fact(
                 key="test_count",
                 value=executed_count,
-                source_file=str(test_dir.relative_to(self.repo_path)) if test_dir.exists() else "tests/",
+                source_file=str(test_dir.relative_to(self.repo_path)) if test_dir.exists() else ".",
                 source_type=FactSourceType.TEST_RUN,
                 description="Verified test case count from pytest collection",
                 unit="tests",
@@ -272,7 +275,7 @@ class FactsExtractor:
         # Filter out venvs and cache
         test_files = [
             f for f in test_files
-            if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") for part in f.parts)
+            if not any(part.startswith(".") or part in ("venv", ".venv", "build", "dist") for part in f.relative_to(self.repo_path).parts)
         ]
 
         for tf in test_files:
@@ -294,19 +297,23 @@ class FactsExtractor:
             node_tests = list(self.repo_path.rglob("*.test.[jt]s*")) + list(self.repo_path.rglob("*.spec.[jt]s*"))
             node_tests = [
                 f for f in node_tests
-                if not any(part.startswith(".") or part in ("node_modules", "dist", "build") for part in f.parts)
+                if not any(part.startswith(".") or part in ("node_modules", "dist", "build") for part in f.relative_to(self.repo_path).parts)
             ]
-            count = len(node_tests)
+            # ponytail: regex over test(/it( calls, not a JS parser; misses tests built in loops
+            count = sum(
+                len(re.findall(r"^\s*(?:test|it)\s*\(", nt.read_text(encoding="utf-8", errors="ignore"), flags=re.MULTILINE))
+                for nt in node_tests
+            )
 
         # Check Rust tests if count is 0
         if count == 0 and (self.repo_path / "Cargo.toml").exists():
             for rs in self.repo_path.rglob("*.rs"):
-                if not any(part.startswith(".") or part in ("target",) for part in rs.parts):
+                if not any(part.startswith(".") or part in ("target",) for part in rs.relative_to(self.repo_path).parts):
                     content = rs.read_text(encoding="utf-8", errors="ignore")
                     count += len(re.findall(r"#\[test\]", content))
 
         if count > 0:
-            source_path = str(test_dir.relative_to(self.repo_path)) if test_dir.exists() else "tests/"
+            source_path = str(test_dir.relative_to(self.repo_path)) if test_dir.exists() else "."
             ledger.add_fact(
                 key="test_count",
                 value=count,

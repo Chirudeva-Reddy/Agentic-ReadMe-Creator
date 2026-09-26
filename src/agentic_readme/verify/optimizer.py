@@ -90,7 +90,7 @@ class EvaluatorOptimizer:
         lic_fact = self.ledger.get_fact("license")
         if lic_fact:
             expected_lic = str(lic_fact.value)
-            text = re.sub(r"badge/licen[sc]e-[a-zA-Z0-9\.\_\-]+", f"badge/license-{expected_lic}", text, flags=re.IGNORECASE)
+            text = re.sub(r"badge/licen[sc]e-[^-?\"'\s]+", f"badge/license-{expected_lic}", text, flags=re.IGNORECASE)
 
         # 3. Fix Python version badge drift
         py_fact = self.ledger.get_fact("python_version")

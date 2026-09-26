@@ -23,6 +23,7 @@ def test_optimizer_auto_fixes_drift_video_and_jargon(tmp_path: Path):
     readme = tmp_path / "README.md"
     readme.write_text("""# demo-repo
 [![Tests](https://img.shields.io/badge/tests-44%20passed-blue.svg?style=for-the-badge)](tests/)
+[![License](https://img.shields.io/badge/license-Apache-blue?style=flat-square)](LICENSE)
 
 Option C Architecture details are here.
 Run our suite of 44 passing tests.
@@ -54,3 +55,6 @@ Run our suite of 44 passing tests.
     # 5. Badge style cleaned
     assert "style=flat-square" in fixed_content
     assert "style=for-the-badge" not in fixed_content
+
+    # 6. License drift fixed without dropping the badge color segment
+    assert "badge/license-MIT-blue" in fixed_content

@@ -1,7 +1,8 @@
 """Video Agent for Phase 1.
 
-Produces /brag 20-second launch video specification, scene-by-scene script,
-and GitHub-safe video embed snippets (GIF preview linking to MP4).
+Produces a 20-second launch video storyboard (brag_spec.json + scenes.md).
+It does not render video: an AI agent renders it with /brag-slim (SKILL.md, Phase 3),
+and WriterAgent embeds the result as a GIF linking to the MP4.
 """
 
 from __future__ import annotations
@@ -25,17 +26,31 @@ class VideoAgent:
         config_path = self.output_dir / "brag_spec.json"
         table_path = self.output_dir / "scenes.md"
 
-        scenes = self._build_20s_storyboard(story)
+        scenes = self._build_20s_storyboard(story, facts)
 
         spec = {
             "title": f"{story.repo_name} Launch Video",
             "duration_seconds": 20,
             "target_resolution": "1920x1080",
-            "framerate": 60,
+            "framerate": 30,
+            "status": "storyboard_only",
+            "render_with": "/brag-slim (https://github.com/latent-spaces/brag), run by an AI agent; see SKILL.md Phase 3",
             "scenes": scenes,
+            "rules": [
+                "Open on the problem a stranger recognises; name the project only in the reveal.",
+                "Every number and claim must come from facts.json or story.yaml.",
+                "Terminal text must be copied from a real run of the commands shown, never typed up.",
+                "Any line meant to be read stays on screen for at least 0.3s per word.",
+            ],
+            "deliverables": {
+                "mp4": "assets/video/launch-video.mp4",
+                "gif": "assets/video/launch-video.gif",
+                "poster": "assets/video/launch-poster.jpg",
+            },
             "github_safe_embed": {
                 "pattern": "gif_preview_linking_to_mp4",
-                "preview_gif": "assets/demo/hero-demo.svg",
+                "preview_gif": "assets/video/launch-video.gif",
+                "reduced_motion_poster": "assets/video/launch-poster.jpg",
                 "target_mp4": "assets/video/launch-video.mp4",
                 "github_discussions_or_release_note": (
                     "Upload MP4 to GitHub Release or issue/PR comment to obtain "
@@ -56,37 +71,46 @@ class VideoAgent:
             "scenes": scenes,
         }
 
-    def _build_20s_storyboard(self, story: StorySpec) -> List[Dict[str, Any]]:
-        return [
-            {
-                "timecode": "00:00 - 00:04",
-                "duration_seconds": 4,
-                "title": "The Hook & Pain Point",
-                "narration": story.hook,
-                "visual": f"Title card: {story.repo_name} with pain callout",
-            },
-            {
-                "timecode": "00:04 - 00:10",
-                "duration_seconds": 6,
-                "title": "The Real Run",
-                "narration": f"Watch {story.repo_name} execute live in the sandbox.",
-                "visual": "Terminal recording executing quickstart and verifying claims",
-            },
-            {
-                "timecode": "00:10 - 00:16",
-                "duration_seconds": 6,
-                "title": "Ground Truth Architecture",
-                "narration": "Every figure and claim is checked against an immutable facts ledger.",
-                "visual": "Architecture diagram transitioning into claim audit validation",
-            },
-            {
-                "timecode": "00:16 - 00:20",
-                "duration_seconds": 4,
-                "title": "Quickstart & Verified PR",
-                "narration": f"Install {story.repo_name} and generate zero-drift docs today.",
-                "visual": "PR diff showing verified assets and passing checks",
-            },
+    def _build_20s_storyboard(self, story: StorySpec, facts: FactsLedger) -> List[Dict[str, Any]]:
+        """Problem-first storyboard: hook -> reveal -> real run -> proof -> how to get it."""
+        name = story.repo_name
+        desc_fact = facts.get_fact("project_description")
+        what = str(desc_fact.value).rstrip(".") + "." if desc_fact else story.solution
+
+        cmds = story.quickstart_commands or []
+        run_cmd = next((c for c in reversed(cmds) if not c.startswith(("git clone", "pip install", "pipx install"))), None)
+        install_cmd = next((c for c in cmds if "install" in c), cmds[0] if cmds else name)
+        help_fact = facts.get_fact("cli_help_output")
+        run_visual = f"Terminal types `{run_cmd}` and shows its real output" if run_cmd else "The product in use, from a real run"
+        if help_fact:
+            run_visual += f" (captured in facts.json: `{str(help_fact.value).strip()}`)"
+
+        proof = [c.claim.rstrip(".") for c in story.key_claims[:2]]
+        remote = facts.get_fact("git_remote_url")
+        outro_visual = f"Install command `{install_cmd}`"
+        if remote:
+            outro_visual += f" and {str(remote.value).removesuffix('.git').split('://')[-1]}"
+
+        beats = [
+            ("Hook: the problem", 3.0, story.hook,
+             f"Show the pain a stranger recognises, before {name} is named. No logo, no architecture."),
+            ("Reveal", 3.5, f"{name}. {what}", f"{name} wordmark with the one-line description."),
+            ("The real run", 5.0, f"One command: {run_cmd}." if run_cmd else f"{name} doing its job.", run_visual),
+            ("Proof", 5.0, ". ".join(proof) + "." if proof else "Every claim links to its evidence.",
+             "Claims appear one by one, each with the file that proves it."),
+            ("How to get it", 3.5, install_cmd, outro_visual + "."),
         ]
+        scenes, start = [], 0.0
+        for title, dur, narration, visual in beats:
+            scenes.append({
+                "timecode": f"00:{start:04.1f} - 00:{start + dur:04.1f}",
+                "duration_seconds": dur,
+                "title": title,
+                "narration": narration,
+                "visual": visual,
+            })
+            start += dur
+        return scenes
 
     def _generate_scene_table(self, scenes: List[Dict[str, Any]]) -> str:
         lines = [
