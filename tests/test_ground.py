@@ -151,3 +151,27 @@ def test_architecture_nodes_do_not_invent_a_domain(tmp_path: Path):
 
     assert "Data Files" in labels
     assert not any("Pricing" in label for label in labels)
+
+
+def test_refresh_story_keeps_edits_and_updates_numbers():
+    from agentic_readme.core.models import ClaimItem, FactsLedger, StorySpec
+    from agentic_readme.ground.story_builder import refresh_story
+
+    story = StorySpec(
+        repo_name="demo", target_audience="Students", hook="My hand-written hook.",
+        problem="p", solution="s",
+        key_claims=[
+            ClaimItem(claim="48 passing tests, not 480.", evidence_file="tests", metrics={"test_count": 48}),
+            ClaimItem(claim="3800 lines of code.", evidence_file="src/", metrics={"loc": 3800}),
+        ],
+    )
+    ledger = FactsLedger(repo_name="demo")
+    ledger.add_fact("test_count", 53, "tests")
+    ledger.add_fact("python_loc", 3900, "src/")
+
+    out = refresh_story(story, ledger)
+    assert out.hook == "My hand-written hook." and out.target_audience == "Students"
+    assert out.key_claims[0].claim == "53 passing tests, not 480."
+    assert out.key_claims[0].metrics == {"test_count": 53}
+    assert out.key_claims[1].claim == "3900 lines of code." and out.key_claims[1].metrics == {"loc": 3900}
+    assert refresh_story(story, ledger, custom_hook="New hook.").hook == "New hook."

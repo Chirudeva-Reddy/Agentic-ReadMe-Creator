@@ -41,10 +41,10 @@ agentic-readme run examples/habit-streak
 
 Each run finishes with `0 fatal errors, 0 warnings`.
 
-For `csv-dedupe`, skip `ground` so you keep its hand-edited hook, because `ground` (and `run`) rewrite `story.yaml`:
+`csv-dedupe` has a hand-edited hook. Re-running `ground` (or `run`) keeps it: when `story.yaml` already exists, only its numbers are refreshed from the new `facts.json`.
 
 ```bash
-agentic-readme produce examples/csv-dedupe && agentic-readme verify examples/csv-dedupe
+agentic-readme run examples/csv-dedupe
 ```
 
 ## Watch it catch a lie

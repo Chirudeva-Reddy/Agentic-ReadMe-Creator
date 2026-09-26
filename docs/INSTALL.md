@@ -102,7 +102,7 @@ pytest
 
 | Command | What it does | Writes files? |
 | :--- | :--- | :--- |
-| `agentic-readme ground <repo> [--hook "..."] [--audience "..."]` | Reads the code, runs its tests, and writes `.agentic-readme/facts.json` + `story.yaml` | Yes, contracts only |
+| `agentic-readme ground <repo> [--hook "..."] [--audience "..."]` | Reads the code, runs its tests, and writes `.agentic-readme/facts.json` + `story.yaml`. An existing `story.yaml` keeps your edits; only its numbers are refreshed. Delete it to start over. | Yes, contracts only |
 | `agentic-readme produce <repo>` | Builds `README.md`, diagrams, demo tape, and video storyboard from those two files | Yes, overwrites `README.md` |
 | `agentic-readme verify <repo>` | Checks every claim, link, and badge; auto-fixes drift; exits `1` on fatal findings | Only auto-fixes |
 | `agentic-readme run <repo>` | `ground` → `produce` → `verify` in one go | Yes |

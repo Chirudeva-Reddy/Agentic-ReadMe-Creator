@@ -5,6 +5,7 @@ Locks down the story, key claims, architecture, and facts before Phase 1 fan-out
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import List, Optional
 
@@ -15,6 +16,40 @@ from agentic_readme.core.models import (
     StorySpec,
 )
 from agentic_readme.ground.repo_analyst import RepoAnalysis
+
+
+# Claim metrics shown under a shorter name than their facts.json key.
+METRIC_FACT_KEYS = {"loc": "python_loc"}
+
+
+def refresh_story(
+    existing: StorySpec,
+    ledger: FactsLedger,
+    target_audience: Optional[str] = None,
+    custom_hook: Optional[str] = None,
+) -> StorySpec:
+    """Re-ground an edited story: keep every human-written field, update only the numbers.
+
+    Each claim's metrics are reset to the ledger's current values, and the old value is
+    swapped for the new one in the claim text. Claims the user deleted stay deleted.
+    """
+    claims = []
+    for item in existing.key_claims:
+        text, metrics = item.claim, dict(item.metrics)
+        for key, old in item.metrics.items():
+            fact = ledger.get_fact(METRIC_FACT_KEYS.get(key, key))
+            if fact is None or fact.value == old:
+                continue
+            # ponytail: whole-token swap only, so 48 -> 53 leaves 480 and 4.8 alone
+            text = re.sub(rf"(?<![\w.]){re.escape(str(old))}(?!\w|\.\d)", str(fact.value), text)
+            metrics[key] = fact.value
+        claims.append(item.model_copy(update={"claim": text, "metrics": metrics}))
+
+    return existing.model_copy(update={
+        "key_claims": claims,
+        "hook": custom_hook or existing.hook,
+        "target_audience": target_audience or existing.target_audience,
+    })
 
 
 class StoryBuilder:

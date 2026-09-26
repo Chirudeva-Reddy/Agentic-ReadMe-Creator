@@ -22,7 +22,7 @@ from agentic_readme.core.models import (
     VerificationReport,
 )
 from agentic_readme.ground.repo_analyst import RepoAnalyst
-from agentic_readme.ground.story_builder import StoryBuilder
+from agentic_readme.ground.story_builder import StoryBuilder, refresh_story
 from agentic_readme.produce.demo_agent import DemoAgent
 from agentic_readme.produce.diagram_agent import DiagramAgent
 from agentic_readme.produce.video_agent import VideoAgent
@@ -63,9 +63,13 @@ class PipelineRunner:
         analyst = RepoAnalyst(self.repo_path)
         analysis = analyst.analyze()
 
-        builder = StoryBuilder(analysis)
-        story = builder.build_story(target_audience=target_audience, custom_hook=custom_hook)
         ledger = analysis.facts_ledger
+        existing = contract_path(self.output_dir, "story.yaml")
+        if existing.exists():
+            story = refresh_story(StorySpec.load_yaml(existing), ledger, target_audience, custom_hook)
+            self.console.print(f"[green]✔ Kept your edits to {existing.name}[/green] (numbers refreshed from facts)")
+        else:
+            story = StoryBuilder(analysis).build_story(target_audience=target_audience, custom_hook=custom_hook)
 
         # Save contracts
         story_file = self.output_dir / CONTRACTS_DIR / "story.yaml"

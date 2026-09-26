@@ -10,15 +10,15 @@ solution: 'Agentic-ReadMe-Creator: A verified, media-rich README pipeline ground
   in real project runs. Every badge and number on this page is checked against facts.json,
   produced from the project''s own code and test runs.'
 key_claims:
-- claim: Automated test suite with 53 passing tests verifying core system invariants.
+- claim: Automated test suite with 54 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 53
+    test_count: 54
   verified: true
-- claim: 3869 lines of code in the project source.
+- claim: 3908 lines of code in the project source.
   evidence_file: src/
   metrics:
-    loc: 3869
+    loc: 3908
   verified: true
 - claim: Open source distribution under the MIT license.
   evidence_file: LICENSE
