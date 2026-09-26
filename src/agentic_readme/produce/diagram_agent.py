@@ -11,7 +11,18 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from agentic_readme.core.models import ArchitectureNode, FactsLedger, StorySpec
+def _xml_escape(text: Any) -> str:
+    """Safely escape text for inclusion in SVG/XML."""
+    if text is None:
+        return ""
+    s = str(text)
+    return (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
 
 
 class DiagramAgent:
@@ -184,13 +195,14 @@ class DiagramAgent:
                 f'<rect x="{x}" y="{y_pos}" width="{box_w}" height="{box_h}" rx="8" '
                 f'fill="{fill}" stroke="{border}" stroke-width="2"/>'
             )
-            role_text = node.role.replace("_", " ").upper()
+            role_text = _xml_escape(node.role.replace("_", " ").upper())
             svg_elements.append(
                 f'<text x="{x + box_w/2}" y="{y_pos + 28}" font-size="10" font-family="system-ui, sans-serif" '
                 f'font-weight="600" fill="{arrow_color}" text-anchor="middle">{role_text}</text>'
             )
             # Truncate label for neat rendering if needed
-            label_text = node.label[:22] + "..." if len(node.label) > 25 else node.label
+            raw_label = node.label[:22] + "..." if len(node.label) > 25 else node.label
+            label_text = _xml_escape(raw_label)
             svg_elements.append(
                 f'<text x="{x + box_w/2}" y="{y_pos + 52}" font-size="13" font-family="system-ui, sans-serif" '
                 f'font-weight="bold" fill="{text_color}" text-anchor="middle">{label_text}</text>'

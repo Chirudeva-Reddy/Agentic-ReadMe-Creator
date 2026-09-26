@@ -151,23 +151,27 @@ class StoryBuilder:
             )
 
         # Quickstart commands
+        remote_fact = ledger.get_fact("git_remote_url")
+        clone_url = str(remote_fact.value) if remote_fact else "<repo-url>"
+        clone_cmd = f"git clone {clone_url} && cd {repo_name}"
+
         quickstart: List[str] = []
         if self.analysis.primary_language == "Python":
-            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
+            quickstart.append(clone_cmd)
             quickstart.append("pip install -e .")
             if self.analysis.test_command:
                 quickstart.append(self.analysis.test_command)
             if self.analysis.quickstart_command:
                 quickstart.append(self.analysis.quickstart_command)
         elif self.analysis.primary_language == "JavaScript/TypeScript":
-            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
+            quickstart.append(clone_cmd)
             quickstart.append("npm install")
             if self.analysis.test_command:
                 quickstart.append(self.analysis.test_command)
             if self.analysis.quickstart_command:
                 quickstart.append(self.analysis.quickstart_command)
         elif self.analysis.primary_language == "Rust":
-            quickstart.append(f"git clone <repo-url> && cd {repo_name}")
+            quickstart.append(clone_cmd)
             if self.analysis.test_command:
                 quickstart.append(self.analysis.test_command)
             if self.analysis.quickstart_command:

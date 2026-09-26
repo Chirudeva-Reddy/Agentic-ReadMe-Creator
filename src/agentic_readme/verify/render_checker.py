@@ -41,6 +41,7 @@ class RenderChecker:
         self._check_asset_sizes(rep)
         self._check_alt_text(readme_text, readme_path, rep)
         self._check_local_links(readme_text, readme_path, rep)
+        self._check_svg_assets(readme_text, readme_path, rep)
 
         return rep
 
@@ -185,3 +186,121 @@ class RenderChecker:
                         actual=target_path_str,
                         suggested_fix=f"Create '{target_path_str}' or adjust the link target.",
                     )
+
+    def _check_svg_assets(
+        self,
+        readme_text: str,
+        readme_path: Path,
+        report: VerificationReport,
+    ) -> None:
+        """Validate SVG assets against GitHub Camo and XML rendering constraints."""
+        import xml.etree.ElementTree as ET
+
+        svg_paths: set[Path] = set()
+
+        # 1. Collect SVGs in assets/ directory
+        assets_dir = self.repo_dir / "assets"
+        if assets_dir.exists():
+            for f in assets_dir.rglob("*.svg"):
+                if f.is_file():
+                    svg_paths.add(f.resolve())
+
+        # 2. Collect SVGs referenced in README (markdown images, <img>, <source>)
+        for m in re.finditer(r'!\[.*?\]\((?!https?://)([^)#\s]+\.svg)[^)]*\)', readme_text, re.IGNORECASE):
+            resolved = (self.repo_dir / m.group(1)).resolve()
+            if resolved.exists() and resolved.is_file():
+                svg_paths.add(resolved)
+
+        for m in re.finditer(r'<img\b[^>]*\bsrc=["\'](?!https?://)([^"\'>]+\.svg)["\']', readme_text, re.IGNORECASE):
+            resolved = (self.repo_dir / m.group(1)).resolve()
+            if resolved.exists() and resolved.is_file():
+                svg_paths.add(resolved)
+
+        for m in re.finditer(r'<source\b[^>]*\bsrcset=["\'](?!https?://)([^"\'>]+\.svg)["\']', readme_text, re.IGNORECASE):
+            resolved = (self.repo_dir / m.group(1)).resolve()
+            if resolved.exists() and resolved.is_file():
+                svg_paths.add(resolved)
+
+        # 3. Validate each SVG
+        for svg_file in sorted(svg_paths):
+            try:
+                rel_path = svg_file.relative_to(self.repo_dir)
+            except ValueError:
+                rel_path = svg_file.name
+
+            # Check well-formedness
+            try:
+                tree = ET.parse(svg_file)
+                root = tree.getroot()
+            except ET.ParseError as e:
+                report.add_finding(
+                    category=FindingCategory.RENDER_ISSUE,
+                    severity=FindingSeverity.FATAL,
+                    message=(
+                        f"GitHub rendering failure: SVG '{rel_path}' is not well-formed XML ({e}). "
+                        f"GitHub Camo proxy and browser image decoders reject malformed SVGs, displaying a broken image '?' icon."
+                    ),
+                    location=str(rel_path),
+                    expected="Well-formed XML document with properly escaped characters (&, <, >, quotes)",
+                    actual=f"ParseError: {e}",
+                    suggested_fix="Escape all dynamic text content with XML entities (&amp;, &lt;, &gt;, &quot;, &apos;).",
+                )
+                continue
+            except Exception as e:
+                report.add_finding(
+                    category=FindingCategory.RENDER_ISSUE,
+                    severity=FindingSeverity.FATAL,
+                    message=f"Failed to read SVG '{rel_path}': {e}",
+                    location=str(rel_path),
+                    expected="Readable SVG file",
+                    actual=str(e),
+                    suggested_fix="Check file permissions and format.",
+                )
+                continue
+
+            # Check for <foreignObject> (stripped or blocked by GitHub sanitizer)
+            for el in root.iter():
+                tag_name = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+                if tag_name.lower() == "foreignobject":
+                    report.add_finding(
+                        category=FindingCategory.RENDER_ISSUE,
+                        severity=FindingSeverity.FATAL,
+                        message=(
+                            f"GitHub sanitization rejection: SVG '{rel_path}' contains '<foreignObject>', "
+                            f"which GitHub's SVG sanitizer strips or blocks for security reasons."
+                        ),
+                        location=str(rel_path),
+                        expected="Native SVG vector elements (<text>, <rect>, <path>, <g>)",
+                        actual="<foreignObject> tag detected",
+                        suggested_fix="Replace <foreignObject> with native SVG <text> and <tspan> elements.",
+                    )
+                    break
+                elif tag_name.lower() == "script":
+                    report.add_finding(
+                        category=FindingCategory.RENDER_ISSUE,
+                        severity=FindingSeverity.FATAL,
+                        message=(
+                            f"GitHub sanitization rejection: SVG '{rel_path}' contains '<script>', "
+                            f"which GitHub's SVG sanitizer strips or blocks."
+                        ),
+                        location=str(rel_path),
+                        expected="Static or CSS-animated SVG without scripts",
+                        actual="<script> tag detected",
+                        suggested_fix="Remove JavaScript from SVG assets.",
+                    )
+                    break
+
+            # Check for inline event handlers (e.g. onload, onclick)
+            for el in root.iter():
+                for attr in el.attrib:
+                    if attr.lower().startswith("on"):
+                        report.add_finding(
+                            category=FindingCategory.RENDER_ISSUE,
+                            severity=FindingSeverity.FATAL,
+                            message=f"SVG '{rel_path}' contains inline event handler '{attr}', blocked by GitHub sanitizer.",
+                            location=str(rel_path),
+                            expected="No inline JS event handlers",
+                            actual=f"Attribute '{attr}' detected",
+                            suggested_fix="Remove event handlers from SVG elements.",
+                        )
+                        break

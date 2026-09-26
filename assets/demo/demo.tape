@@ -14,7 +14,7 @@ Set Framerate 30
 Sleep 1s
 
 # Run verified quickstart commands
-Type "git clone <repo-url> && cd Agentic-ReadMe-Creator"
+Type "git clone https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git && cd Agentic-ReadMe-Creator"
 Sleep 500ms
 Enter
 Sleep 2s

@@ -1,6 +1,6 @@
 {
   "repo_name": "Agentic-ReadMe-Creator",
-  "generated_at": "2026-09-26T07:20:50.361683+00:00",
+  "generated_at": "2026-09-26T08:16:09.310907+00:00",
   "facts": {
     "git_default_branch": {
       "key": "git_default_branch",
@@ -10,7 +10,17 @@
       "description": "Default git branch",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.376519+00:00"
+      "verified_at": "2026-09-26T08:16:09.322754+00:00"
+    },
+    "git_remote_url": {
+      "key": "git_remote_url",
+      "value": "https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git",
+      "source_file": ".git/config",
+      "source_type": "git",
+      "description": "Git remote repository URL",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T08:16:09.333081+00:00"
     },
     "python_version": {
       "key": "python_version",
@@ -20,7 +30,7 @@
       "description": "Supported Python version requirement",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.376845+00:00"
+      "verified_at": "2026-09-26T08:16:09.333353+00:00"
     },
     "project_version": {
       "key": "project_version",
@@ -30,7 +40,7 @@
       "description": "Project release version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.376901+00:00"
+      "verified_at": "2026-09-26T08:16:09.333399+00:00"
     },
     "project_description": {
       "key": "project_description",
@@ -40,7 +50,7 @@
       "description": "Project summary description",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.376943+00:00"
+      "verified_at": "2026-09-26T08:16:09.333434+00:00"
     },
     "python_file_count": {
       "key": "python_file_count",
@@ -50,17 +60,17 @@
       "description": "Number of Python source files",
       "unit": "files",
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.381114+00:00"
+      "verified_at": "2026-09-26T08:16:09.339043+00:00"
     },
     "python_loc": {
       "key": "python_loc",
-      "value": 4466,
+      "value": 4735,
       "source_file": "src/",
       "source_type": "source_code",
       "description": "Lines of Python code",
       "unit": "lines",
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.381123+00:00"
+      "verified_at": "2026-09-26T08:16:09.339055+00:00"
     },
     "license": {
       "key": "license",
@@ -70,17 +80,17 @@
       "description": "Software license",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.381183+00:00"
+      "verified_at": "2026-09-26T08:16:09.339117+00:00"
     },
     "test_count": {
       "key": "test_count",
-      "value": 37,
+      "value": 41,
       "source_file": "tests",
       "source_type": "test_run",
       "description": "Verified test case count from pytest collection",
       "unit": "tests",
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.591649+00:00"
+      "verified_at": "2026-09-26T08:16:09.558757+00:00"
     },
     "skill": {
       "key": "skill",
@@ -90,7 +100,7 @@
       "description": "Claude Code agent skill specification identifier",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.591931+00:00"
+      "verified_at": "2026-09-26T08:16:09.559290+00:00"
     },
     "protocol": {
       "key": "protocol",
@@ -100,7 +110,7 @@
       "description": "Model Context Protocol specification version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.591944+00:00"
+      "verified_at": "2026-09-26T08:16:09.559311+00:00"
     },
     "tools_schema": {
       "key": "tools_schema",
@@ -110,7 +120,7 @@
       "description": "OpenAI tools function calling schemas count",
       "unit": "tools",
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.592023+00:00"
+      "verified_at": "2026-09-26T08:16:09.559526+00:00"
     },
     "cli_help_output": {
       "key": "cli_help_output",
@@ -120,7 +130,7 @@
       "description": "Verified CLI help output from live execution",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.716056+00:00"
+      "verified_at": "2026-09-26T08:16:09.697287+00:00"
     },
     "headless_run_status": {
       "key": "headless_run_status",
@@ -130,7 +140,7 @@
       "description": "Project successfully ran headless",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-09-26T07:20:50.716085+00:00"
+      "verified_at": "2026-09-26T08:16:09.697363+00:00"
     }
   }
 }

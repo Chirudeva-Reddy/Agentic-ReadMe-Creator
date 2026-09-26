@@ -61,6 +61,24 @@ class FactsExtractor:
         except Exception:
             pass
 
+        try:
+            res_remote = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if res_remote.returncode == 0 and res_remote.stdout.strip():
+                ledger.add_fact(
+                    key="git_remote_url",
+                    value=res_remote.stdout.strip(),
+                    source_file=".git/config",
+                    source_type=FactSourceType.GIT,
+                    description="Git remote repository URL",
+                )
+        except Exception:
+            pass
     def _extract_python_facts(self, ledger: FactsLedger) -> None:
         pyproject = self.repo_path / "pyproject.toml"
         if pyproject.exists():

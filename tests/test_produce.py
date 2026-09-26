@@ -82,6 +82,33 @@ def test_demo_agent(tmp_path: Path):
     assert res["max_size_bytes"] == 5 * 1024 * 1024
 
 
+def test_demo_agent_xml_escaping(tmp_path: Path):
+    """Ensure DemoAgent properly escapes special characters in XML/SVG."""
+    import xml.etree.ElementTree as ET
+
+    story, ledger = _create_mock_contracts()
+    story.repo_name = "Agent & Tool <v1.0>"
+    story.quickstart_commands = ['git clone <repo-url> && cd "my tool"']
+    story.key_claims = [
+        ClaimItem(claim='100% verified & tested <invariants>', evidence_file="tests/")
+    ]
+
+    agent = DemoAgent(tmp_path)
+    res = agent.produce(story, ledger)
+
+    svg_path = res["hero_asset"]
+    assert svg_path.exists()
+
+    # Must parse without XML syntax errors
+    tree = ET.parse(svg_path)
+    root = tree.getroot()
+    assert root.attrib["width"] == "800"
+    assert root.attrib["height"] == "380"
+    assert root.attrib["viewBox"] == "0 0 800 380"
+    content = svg_path.read_text(encoding="utf-8")
+    assert "&amp;&amp;" in content or "&amp;" in content
+
+
 def test_video_agent(tmp_path: Path):
     story, ledger = _create_mock_contracts()
     agent = VideoAgent(tmp_path)

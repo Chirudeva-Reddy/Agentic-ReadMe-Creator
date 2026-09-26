@@ -76,3 +76,57 @@ def test_render_checker_flags_oversized_gif(tmp_path: Path):
     size_findings = [f for f in report.findings if f.category == FindingCategory.SIZE_LIMIT]
     assert len(size_findings) == 1
     assert "exceeding recommended 5MB ceiling" in size_findings[0].message
+
+
+def test_render_checker_catches_malformed_svg(tmp_path: Path):
+    """Verifies that malformed XML in SVGs is detected as a fatal render issue."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    bad_svg = assets_dir / "bad.svg"
+    # Write invalid XML (unclosed tag / unescaped ampersand)
+    bad_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg"><text>$ git clone <repo> && cd foo</text></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero demo" src="assets/bad.svg" width="760">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    svg_findings = [f for f in report.findings if f.category == FindingCategory.RENDER_ISSUE and "not well-formed XML" in f.message]
+    assert len(svg_findings) == 1
+    assert svg_findings[0].severity == FindingSeverity.FATAL
+
+
+def test_render_checker_catches_foreign_object_in_svg(tmp_path: Path):
+    """Verifies that foreignObject in SVGs is detected as a fatal render issue."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    fo_svg = assets_dir / "fo.svg"
+    fo_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg"><foreignObject width="100" height="100"><div>hello</div></foreignObject></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero demo" src="assets/fo.svg" width="760">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    fo_findings = [f for f in report.findings if f.category == FindingCategory.RENDER_ISSUE and "<foreignObject>" in f.message]
+    assert len(fo_findings) == 1
+    assert fo_findings[0].severity == FindingSeverity.FATAL
+
+
+def test_render_checker_accepts_valid_svg(tmp_path: Path):
+    """Verifies that well-formed SVGs pass verification."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    good_svg = assets_dir / "good.svg"
+    good_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="800" height="380"><rect width="100%" height="100%" fill="#1e1e2e"/><text x="30" y="80">Clean SVG</text></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero demo" src="assets/good.svg" width="760">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    render_findings = [f for f in report.findings if f.category == FindingCategory.RENDER_ISSUE]
+    assert len(render_findings) == 0

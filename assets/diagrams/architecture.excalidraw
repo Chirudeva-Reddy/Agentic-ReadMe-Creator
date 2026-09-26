@@ -54,7 +54,7 @@
       "baseline": 18
     },
     {
-      "id": "node_src_1",
+      "id": "node_integrations_1",
       "type": "rectangle",
       "x": 320,
       "y": 100,
@@ -78,11 +78,11 @@
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
-      "link": "src",
+      "link": "integrations",
       "locked": false
     },
     {
-      "id": "text_node_src_1",
+      "id": "text_node_integrations_1",
       "type": "text",
       "x": 335,
       "y": 130,
@@ -96,7 +96,7 @@
       "strokeStyle": "solid",
       "roughness": 1,
       "opacity": 100,
-      "text": "Src Module",
+      "text": "Integrations Module",
       "fontSize": 14,
       "fontFamily": 1,
       "textAlign": "center",
@@ -125,7 +125,7 @@
       "endArrowhead": "arrow"
     },
     {
-      "id": "node_agentic_readme_creator.egg-info_2",
+      "id": "node_skills_2",
       "type": "rectangle",
       "x": 540,
       "y": 100,
@@ -149,11 +149,11 @@
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
-      "link": "src/agentic_readme_creator.egg-info",
+      "link": "skills",
       "locked": false
     },
     {
-      "id": "text_node_agentic_readme_creator.egg-info_2",
+      "id": "text_node_skills_2",
       "type": "text",
       "x": 555,
       "y": 130,
@@ -167,7 +167,7 @@
       "strokeStyle": "solid",
       "roughness": 1,
       "opacity": 100,
-      "text": "Agentic Readme Creator.Egg-Info Module",
+      "text": "Skills Module",
       "fontSize": 14,
       "fontFamily": 1,
       "textAlign": "center",
@@ -196,7 +196,7 @@
       "endArrowhead": "arrow"
     },
     {
-      "id": "node_agentic_readme_3",
+      "id": "node_src_3",
       "type": "rectangle",
       "x": 760,
       "y": 100,
@@ -220,13 +220,84 @@
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
+      "link": "src",
+      "locked": false
+    },
+    {
+      "id": "text_node_src_3",
+      "type": "text",
+      "x": 775,
+      "y": 130,
+      "width": 150,
+      "height": 30,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "text": "Src Module",
+      "fontSize": 14,
+      "fontFamily": 1,
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "baseline": 18
+    },
+    {
+      "id": "arrow_3",
+      "type": "arrow",
+      "x": 720,
+      "y": 145,
+      "width": 40,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          40,
+          0
+        ]
+      ],
+      "endArrowhead": "arrow"
+    },
+    {
+      "id": "node_agentic_readme_4",
+      "type": "rectangle",
+      "x": 980,
+      "y": 100,
+      "width": 180,
+      "height": 90,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "#e7f5ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1004,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
       "link": "src/agentic_readme",
       "locked": false
     },
     {
-      "id": "text_node_agentic_readme_3",
+      "id": "text_node_agentic_readme_4",
       "type": "text",
-      "x": 775,
+      "x": 995,
       "y": 130,
       "width": 150,
       "height": 30,
@@ -246,9 +317,9 @@
       "baseline": 18
     },
     {
-      "id": "arrow_3",
+      "id": "arrow_4",
       "type": "arrow",
-      "x": 720,
+      "x": 940,
       "y": 145,
       "width": 40,
       "height": 0,
