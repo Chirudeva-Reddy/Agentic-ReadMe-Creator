@@ -21,6 +21,8 @@
   </a>
   <br>
   <sub>20 seconds, no sound needed. <a href="assets/video/launch-video.mp4">MP4 with soundtrack</a> · <a href="docs/LAUNCH_VIDEO.md">how it was made</a></sub>
+  <br><br>
+  <a href="https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/"><b>Website and case study →</b></a> a bare repo turned into a verified README with a launch video, step by step
 </p>
 
 **What it is:** a command-line tool that reads a code project, records what's actually true about it (how many tests pass, the license, the Python version, what the entrypoints are), and writes a README, diagrams, and a launch-video storyboard from those facts. It then audits the README. If a badge or number doesn't match the code, it exits with an error, so your CI can block the pull request.
@@ -31,7 +33,7 @@
 
 | You are a... | Read this | Time |
 | :--- | :--- | :--- |
-| **Recruiter or reviewer** | The video above, then [What this project demonstrates](#what-this-project-demonstrates) | 1 min |
+| **Recruiter or reviewer** | The video above, the [case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study), then [What this project demonstrates](#what-this-project-demonstrates) | 2 min |
 | **Student or first-time visitor** | [Try it in 60 seconds](#quickstart-try-it-in-60-seconds), then the [examples](examples/) | 5 min |
 | **Non-technical user** | The [step-by-step install guide](docs/INSTALL.md#track-a-never-used-a-terminal): copy and paste, no Python setup needed | 10 min |
 | **Developer** | [Install](#install), then [Architecture](docs/ARCHITECTURE.md) | 5 min |
@@ -73,6 +75,7 @@ Real runs, with the output committed. Nothing was edited by hand.
 | :--- | :--- | :--- | :--- |
 | [`tip-splitter`](examples/tip-splitter/) | Python CLI + pytest | [README.md](examples/tip-splitter/README.md) | 23 facts checked, 0 errors |
 | [`habit-streak`](examples/habit-streak/) | Node.js + `node --test` | [README.md](examples/habit-streak/README.md) | 18 facts checked, 0 errors |
+| [`csv-dedupe`](examples/csv-dedupe/) | Python CLI, with launch video | [README.md](examples/csv-dedupe/README.md) | 23 facts checked, 0 errors ([case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study)) |
 | this repo | Python package, 48 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
 
 See [examples/README.md](examples/README.md) for what each generated file is and how to run them.

@@ -1,0 +1,63 @@
+{
+  "title": "csv-dedupe Launch Video",
+  "duration_seconds": 20,
+  "target_resolution": "1920x1080",
+  "framerate": 30,
+  "status": "storyboard_only",
+  "render_with": "/brag-slim (https://github.com/latent-spaces/brag), run by an AI agent; see SKILL.md Phase 3",
+  "scenes": [
+    {
+      "timecode": "00:00.0 - 00:03.0",
+      "duration_seconds": 3.0,
+      "title": "Hook: the problem",
+      "narration": "Your customer export lists Ana three times.",
+      "visual": "Show the pain a stranger recognises, before csv-dedupe is named. No logo, no architecture."
+    },
+    {
+      "timecode": "00:03.0 - 00:06.5",
+      "duration_seconds": 3.5,
+      "title": "Reveal",
+      "narration": "csv-dedupe. Removes duplicate rows from CSV exports, optionally matching on one column.",
+      "visual": "csv-dedupe wordmark with the one-line description."
+    },
+    {
+      "timecode": "00:06.5 - 00:11.5",
+      "duration_seconds": 5.0,
+      "title": "The real run",
+      "narration": "One command: python3 cli.py.",
+      "visual": "Terminal types `python3 cli.py` and shows its real output (captured in facts.json: `usage: cli.py [-h] [--key KEY] [-o OUTPUT] path`)"
+    },
+    {
+      "timecode": "00:11.5 - 00:16.5",
+      "duration_seconds": 5.0,
+      "title": "Proof",
+      "narration": "Automated test suite with 4 passing tests verifying core system invariants. 60 lines of code in the project source.",
+      "visual": "Claims appear one by one, each with the file that proves it."
+    },
+    {
+      "timecode": "00:16.5 - 00:20.0",
+      "duration_seconds": 3.5,
+      "title": "How to get it",
+      "narration": "pip install -e .",
+      "visual": "Install command `pip install -e .`."
+    }
+  ],
+  "rules": [
+    "Open on the problem a stranger recognises; name the project only in the reveal.",
+    "Every number and claim must come from facts.json or story.yaml.",
+    "Terminal text must be copied from a real run of the commands shown, never typed up.",
+    "Any line meant to be read stays on screen for at least 0.3s per word."
+  ],
+  "deliverables": {
+    "mp4": "assets/video/launch-video.mp4",
+    "gif": "assets/video/launch-video.gif",
+    "poster": "assets/video/launch-poster.jpg"
+  },
+  "github_safe_embed": {
+    "pattern": "gif_preview_linking_to_mp4",
+    "preview_gif": "assets/video/launch-video.gif",
+    "reduced_motion_poster": "assets/video/launch-poster.jpg",
+    "target_mp4": "assets/video/launch-video.mp4",
+    "github_discussions_or_release_note": "Upload MP4 to GitHub Release or issue/PR comment to obtain a https://github.com/user-attachments/assets/... URL."
+  }
+}

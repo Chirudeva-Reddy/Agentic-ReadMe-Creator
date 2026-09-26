@@ -1,0 +1,6 @@
+[project]
+name = "csv-dedupe"
+version = "0.1.0"
+description = "Removes duplicate rows from CSV exports, optionally matching on one column"
+requires-python = ">=3.9"
+license = { text = "MIT" }

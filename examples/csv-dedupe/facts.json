@@ -1,0 +1,96 @@
+{
+  "repo_name": "csv-dedupe",
+  "generated_at": "2026-09-26T11:22:20.201784+00:00",
+  "facts": {
+    "python_version": {
+      "key": "python_version",
+      "value": ">=3.9",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Supported Python version requirement",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202258+00:00"
+    },
+    "project_version": {
+      "key": "project_version",
+      "value": "0.1.0",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Project release version",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202298+00:00"
+    },
+    "project_description": {
+      "key": "project_description",
+      "value": "Removes duplicate rows from CSV exports, optionally matching on one column",
+      "source_file": "pyproject.toml",
+      "source_type": "config",
+      "description": "Project summary description",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202331+00:00"
+    },
+    "python_file_count": {
+      "key": "python_file_count",
+      "value": 2,
+      "source_file": ".",
+      "source_type": "source_code",
+      "description": "Number of Python source files",
+      "unit": "files",
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202608+00:00"
+    },
+    "python_loc": {
+      "key": "python_loc",
+      "value": 60,
+      "source_file": ".",
+      "source_type": "source_code",
+      "description": "Lines of Python code",
+      "unit": "lines",
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202611+00:00"
+    },
+    "license": {
+      "key": "license",
+      "value": "MIT",
+      "source_file": "LICENSE",
+      "source_type": "source_code",
+      "description": "Software license",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.202657+00:00"
+    },
+    "test_count": {
+      "key": "test_count",
+      "value": 4,
+      "source_file": "tests",
+      "source_type": "source_code",
+      "description": "Static test definition count (AST/regex collection fallback)",
+      "unit": "tests",
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.429256+00:00"
+    },
+    "cli_help_output": {
+      "key": "cli_help_output",
+      "value": "usage: cli.py [-h] [--key KEY] [-o OUTPUT] path",
+      "source_file": "cli.py",
+      "source_type": "source_code",
+      "description": "Verified CLI help output from live execution",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.451343+00:00"
+    },
+    "headless_run_status": {
+      "key": "headless_run_status",
+      "value": "verified_headless",
+      "source_file": "cli.py",
+      "source_type": "source_code",
+      "description": "Project successfully ran headless",
+      "unit": null,
+      "line_number": null,
+      "verified_at": "2026-09-26T11:22:20.451371+00:00"
+    }
+  }
+}

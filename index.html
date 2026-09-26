@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic-ReadMe-Creator: READMEs that can't lie</title>
+<meta name="description" content="Writes your README from your code, then fails the build if the two ever disagree. Case study: a bare repo to a verified README with a launch video.">
+<meta property="og:title" content="Agentic-ReadMe-Creator: READMEs that can't lie">
+<meta property="og:description" content="Your README says 40 tests pass. Your code has 3. This writes the README from the code and fails the build when they disagree.">
+<meta property="og:image" content="https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/assets/video/launch-poster.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel-2: #0f141b; --line: #30363d; --fg: #e6edf3; --muted: #8b949e;
+    --term: #1e1e2e; --term-line: #313244; --text: #cdd6f4; --sub: #a6adc8;
+    --green: #a6e3a1; --red: #f38ba8; --blue: #89b4fa; --yellow: #f9e2af;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --wrap: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+  code, pre { font-family: var(--mono); }
+  code { font-size: .88em; background: var(--panel); border: 1px solid var(--line); padding: .1em .4em; border-radius: 6px; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+  .muted { color: var(--muted); }
+  .green { color: var(--green); } .red { color: var(--red); } .blue { color: var(--blue); }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; background: rgba(13,17,23,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; gap: 22px; height: 58px; }
+  nav .brand { font-weight: 700; color: var(--fg); margin-right: auto; white-space: nowrap; }
+  nav .brand span { color: var(--blue); }
+  nav a.link { color: var(--muted); font-size: 15px; }
+  nav a.link:hover { color: var(--fg); text-decoration: none; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); }
+  .btn:hover { text-decoration: none; border-color: var(--muted); }
+  .btn.primary { background: var(--green); color: #0d1117; border-color: var(--green); }
+  @media (max-width: 720px) { nav a.link { display: none; } }
+
+  /* hero */
+  header.hero { padding: 72px 0 40px; text-align: center; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(137,180,250,.14), transparent 70%); }
+  .eyebrow { font-family: var(--mono); font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+  h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.08; letter-spacing: -.03em; margin: 14px auto 18px; max-width: 900px; }
+  .lede { font-size: clamp(18px, 2.2vw, 21px); color: var(--muted); max-width: 680px; margin: 0 auto 28px; }
+  .lede b { color: var(--fg); font-weight: 600; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .video { margin: 44px auto 0; max-width: 960px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 30px 90px rgba(0,0,0,.55); background: #000; }
+  .video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  .caption { font-size: 14px; color: var(--muted); margin-top: 12px; }
+
+  section { padding: 84px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.02em; line-height: 1.15; margin: 0 0 12px; }
+  h3 { font-size: 20px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .section-lede { color: var(--muted); max-width: 720px; margin: 0 0 40px; font-size: 18px; }
+  .kicker { font-family: var(--mono); font-size: 13px; color: var(--green); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+
+  /* how it works */
+  .phases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; counter-reset: ph; }
+  .phase { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .phase .n { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .phase h3 { font-size: 17px; margin: 6px 0; }
+  .phase p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+  .phase.you { border-color: rgba(249,226,175,.45); }
+  .phase.you .n { color: var(--yellow); }
+  @media (max-width: 900px) { .phases { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .phases { grid-template-columns: 1fr; } }
+
+  /* before / after */
+  .ba { display: grid; grid-template-columns: 1fr 1.35fr; gap: 20px; align-items: start; margin-bottom: 64px; }
+  .ba .label { font-family: var(--mono); font-size: 13px; margin-bottom: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .tree { font-family: var(--mono); font-size: 15px; }
+  .tree .row { display: flex; gap: 10px; padding: 11px 18px; border-top: 1px solid var(--line); }
+  .tree .row:first-child { border-top: 0; background: var(--panel-2); color: var(--muted); font-size: 13px; }
+  .tree .empty { padding: 26px 18px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--sans); font-size: 15px; text-align: center; }
+  .tree .empty b { display: block; color: var(--fg); font-size: 16px; margin-bottom: 4px; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot { display: block; max-height: 620px; overflow: hidden; position: relative; }
+  .shot::after { content: ""; position: absolute; inset: auto 0 0 0; height: 90px; background: linear-gradient(transparent, var(--panel)); }
+  @media (max-width: 820px) { .ba { grid-template-columns: 1fr; } }
+
+  /* timeline */
+  .steps { list-style: none; margin: 0; padding: 0; position: relative; }
+  .steps::before { content: ""; position: absolute; left: 17px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+  .step { position: relative; padding-left: 58px; margin-bottom: 48px; }
+  .step:last-child { margin-bottom: 0; }
+  .step .dot { position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); display: grid; place-items: center; font: 600 14px var(--mono); color: var(--muted); }
+  .step.you .dot { border-color: var(--yellow); color: var(--yellow); }
+  .step.ok .dot { border-color: var(--green); color: var(--green); }
+  .step h3 { padding-top: 5px; }
+  .step .who { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-left: 8px; font-weight: 400; }
+  .step p { margin: 6px 0 14px; color: var(--muted); max-width: 760px; }
+  .step p b { color: var(--fg); font-weight: 600; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .two pre.term { white-space: pre-wrap; overflow-wrap: anywhere; }
+  @media (max-width: 820px) { .step pre.term { white-space: pre-wrap; overflow-wrap: anywhere; } .step { padding-left: 50px; } }
+  @media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+  pre.term { margin: 0; background: var(--term); border: 1px solid var(--term-line); border-radius: 10px; padding: 16px 18px; font-size: 13.5px; line-height: 1.6; color: var(--text); overflow-x: auto; }
+  pre.term .p { color: var(--green); }
+  pre.term .c { color: var(--sub); }
+  pre.term .del { color: var(--red); }
+  pre.term .add { color: var(--green); }
+  pre.term .hl-bad { background: rgba(243,139,168,.14); }
+  pre.term .hl-ok { background: rgba(166,227,161,.12); }
+  .ftitle { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+  .mini-video { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+  .mini-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+
+  /* improvements */
+  .fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 820px) { .fixes { grid-template-columns: 1fr; } }
+  .fix { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .fix h3 { font-size: 17px; }
+  .fix .why { color: var(--muted); font-size: 15px; margin: 4px 0 14px; }
+  .fix .pair { display: grid; gap: 8px; }
+  .fix .b, .fix .a { font-family: var(--mono); font-size: 13px; padding: 10px 12px; border-radius: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+  .fix .b { background: rgba(243,139,168,.08); border: 1px solid rgba(243,139,168,.25); color: #f5c2d0; }
+  .fix .a { background: rgba(166,227,161,.07); border: 1px solid rgba(166,227,161,.25); color: #cfeecb; }
+  .fix .b::before { content: "before  "; color: var(--red); }
+  .fix .a::before { content: "after   "; color: var(--green); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 40px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .stat .v { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+  .stat .k { color: var(--muted); font-size: 14px; }
+  @media (max-width: 720px) { .stats { grid-template-columns: 1fr 1fr; } }
+
+  .limits { margin-top: 28px; padding: 18px 20px; border-left: 3px solid var(--yellow); background: var(--panel); border-radius: 0 10px 10px 0; color: var(--muted); font-size: 15.5px; }
+  .limits b { color: var(--fg); }
+  .limits ul { margin: 8px 0 0; padding-left: 20px; }
+
+  /* install */
+  .tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .tracks { grid-template-columns: 1fr; } }
+  .track { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+  .track p { color: var(--muted); font-size: 15px; margin: 4px 0 14px; }
+  .track pre.term { font-size: 12.5px; flex: 1; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .track .more { margin-top: 12px; font-size: 14px; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 60px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top">Agentic-<span>ReadMe</span>-Creator</a>
+    <a class="link" href="#how">How it works</a>
+    <a class="link" href="#case-study">Case study</a>
+    <a class="link" href="#improvements">What we fixed</a>
+    <a class="link" href="#install">Install</a>
+    <a class="btn" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator">GitHub</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="eyebrow">open source · MIT · Python CLI + Claude Code skill</div>
+    <h1>Your README says 40 tests pass. <span class="red">Your code has 3.</span></h1>
+    <p class="lede">Agentic-ReadMe-Creator <b>writes your README from your code</b>, then <b>fails the build</b> if the two ever disagree. It can also turn the result into a 20-second launch video.</p>
+    <div class="cta">
+      <a class="btn primary" href="#case-study">See it on a real repo</a>
+      <a class="btn" href="#install">Install</a>
+    </div>
+    <div class="video">
+      <video controls muted autoplay loop playsinline preload="metadata" poster="assets/video/launch-poster.jpg" aria-label="20-second launch video for Agentic-ReadMe-Creator">
+        <source src="assets/video/launch-video.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="caption">20-second launch video. Turn the sound on for the soundtrack.</div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="kicker">How it works</div>
+    <h2>Facts first, prose second</h2>
+    <p class="section-lede">Most README generators start by writing. This one starts by measuring what's true about the code, then only lets the README say that.</p>
+    <div class="phases">
+      <div class="phase"><div class="n">01 · ground</div><h3>Record the facts</h3><p>Collects the tests, reads the license and config, runs the CLI's <code>--help</code>. Writes <code>facts.json</code>.</p></div>
+      <div class="phase you"><div class="n">02 · you</div><h3>Edit one line</h3><p>Rewrite the <code>hook</code> in <code>story.yaml</code> as the problem a stranger recognises.</p></div>
+      <div class="phase"><div class="n">03 · produce</div><h3>Write the README</h3><p>README, light and dark diagrams, and a video storyboard, all built from those two files.</p></div>
+      <div class="phase"><div class="n">04 · verify</div><h3>Check every claim</h3><p>Badges, numbers, and links are checked against <code>facts.json</code>. Exits <code>1</code> on a lie.</p></div>
+      <div class="phase"><div class="n">05 · launch</div><h3>Render the video</h3><p>An AI agent renders the storyboard with <a href="https://github.com/latent-spaces/brag">/brag</a>. It becomes the README's top image.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="case-study">
+  <div class="wrap">
+    <div class="kicker">Case study</div>
+    <h2>csv-dedupe: from a bare repo to a launch-ready README</h2>
+    <p class="section-lede">A small Python tool that removes duplicate rows from CSV exports. It had working code, 4 tests, and sample data, but no README. Here's every step, with the real output from each command.</p>
+
+    <div class="ba">
+      <div>
+        <div class="label red">Before · what a visitor saw</div>
+        <div class="card tree" role="img" aria-label="File list of the bare csv-dedupe repo with no README">
+          <div class="row">csv-dedupe / main</div>
+          <div class="row">📁 data</div>
+          <div class="row">📁 tests</div>
+          <div class="row">📄 LICENSE</div>
+          <div class="row">📄 cli.py</div>
+          <div class="row">📄 pyproject.toml</div>
+          <div class="empty"><b>No README</b>Visitors have to read <code>cli.py</code> to find out what this does.</div>
+        </div>
+      </div>
+      <div>
+        <div class="label green">After · what a visitor sees now</div>
+        <a class="card shot" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/tree/main/examples/csv-dedupe" aria-label="Open the generated csv-dedupe README on GitHub">
+          <picture>
+            <source media="(prefers-color-scheme: light)" srcset="site/img/csv-dedupe-readme-light.jpg">
+            <img src="site/img/csv-dedupe-readme-dark.jpg" alt="Generated csv-dedupe README: the hook 'Your customer export lists Ana three times', verified badges for MIT license, Python 3.9+ and 4 passing tests, the launch video, and an architecture diagram." loading="lazy" width="1200" height="1445">
+          </picture>
+        </a>
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <div class="dot">1</div>
+        <h3>Ground: record what's true <span class="who">agentic-readme ground .</span></h3>
+        <p>Before writing a word, the tool reads the project and saves <b>9 facts</b>, each with the file it came from. Everything written later has to match these.</p>
+        <div class="two">
+          <pre class="term"><span class="p">$</span> agentic-readme ground .
+<span class="c"># absolute paths shortened</span>
+[Phase 0: GROUND] Analyzing repository at …/csv-dedupe...
+<span class="add">✔ Locked contracts created:</span>
+  - Story Spec: story.yaml
+  - Facts Ledger: facts.json (9 facts recorded)</pre>
+          <pre class="term"><span class="c">// facts.json (excerpt)</span>
+test_count       4            <span class="c">← tests/</span>
+license          "MIT"        <span class="c">← LICENSE</span>
+python_version   "&gt;=3.9"      <span class="c">← pyproject.toml</span>
+python_loc       60           <span class="c">← .</span>
+cli_help_output  "usage: cli.py [-h] [--key KEY]
+                  [-o OUTPUT] path"   <span class="c">← cli.py</span></pre>
+        </div>
+      </li>
+
+      <li class="step you">
+        <div class="dot">2</div>
+        <h3>You: rewrite the hook <span class="who">story.yaml, one line</span></h3>
+        <p>The default hook is just the package description. It's accurate, but nobody stops scrolling for it. <b>This is the only manual step, and it matters most:</b> name the problem a stranger already has. The new line comes from the repo's own sample data (<code>data/contacts.csv</code> really does list Ana three times).</p>
+        <pre class="term"><span class="del">- hook: Removes duplicate rows from CSV exports, optionally matching on one column.</span>
+<span class="add">+ hook: Your customer export lists Ana three times.</span></pre>
+      </li>
+
+      <li class="step">
+        <div class="dot">3</div>
+        <h3>Produce: write the README <span class="who">agentic-readme produce .</span></h3>
+        <p>Every asset is built from the two locked files. Nothing new is invented at this stage. Until a real video exists, the top image is a drawn terminal preview, and the README <b>says so</b> instead of passing it off as a recording.</p>
+        <div class="two">
+          <pre class="term"><span class="p">$</span> agentic-readme produce .
+[Phase 1: PRODUCE] Generating assets from locked story &amp; facts...
+  <span class="add">✔ Diagram Agent:</span> generated .excalidraw + light/dark SVGs
+  <span class="add">✔ Demo Agent:</span> generated VHS script + hero asset
+  <span class="add">✔ Video Agent:</span> generated /brag 20s spec + scene table
+  <span class="add">✔ Writer Agent:</span> generated candidate README.md</pre>
+          <pre class="term"><span class="c">&lt;!-- README.md, under the hero image --&gt;</span>
+&lt;sub&gt;Illustrated preview of the quickstart,
+not a screen recording. Record the real run
+with &lt;code&gt;vhs assets/demo/demo.tape&lt;/code&gt;.&lt;/sub&gt;</pre>
+        </div>
+      </li>
+
+      <li class="step ok">
+        <div class="dot">4</div>
+        <h3>Verify: and try to make it lie <span class="who">agentic-readme verify . / audit</span></h3>
+        <p>The first check passes. Then we edit the tests badge from <b>4</b> to <b>40</b> and run the read-only audit. It fails with exit code <code>1</code>, so a CI job would block that pull request.</p>
+        <div class="two">
+          <pre class="term"><span class="p">$</span> agentic-readme verify .
+[Phase 2: VERIFY] Running cross-asset verification &amp; claim auditing...
+<span class="hl-ok add">✔ Verification PASSED (23 facts checked, 0 fatal bugs)</span>
+Summary: 23 facts checked. 0 fatal errors, 0 warnings.</pre>
+          <pre class="term"><span class="del">- badge/tests-4%20passed</span>
+<span class="add">+ badge/tests-40%20passed</span>
+<span class="p">$</span> agentic-readme audit README.md --facts facts.json
+<span class="c"># report table flattened to lines</span>
+<span class="hl-bad">fact_drift │ <span class="del">Fatal Functional Bug</span> Test count badge drift:</span>
+  badge claims 40 tests passed, but facts ledger
+  records 4.
+Summary: 23 facts checked. <span class="del">1 fatal errors</span>
+<span class="c">exit=1</span></pre>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="dot">5</div>
+        <h3>Launch: render the video <span class="who">Claude Code + /brag</span></h3>
+        <p><code>produce</code> also wrote a problem-first storyboard: <b>hook → reveal → real run → proof → how to get it</b>. The agent rendered it with <a href="https://github.com/latent-spaces/brag">/brag</a>, running the real command and copying its actual output. Then <code>produce</code> ran again and swapped the drawn preview for the video on its own. Verify: 23 facts, 0 errors.</p>
+        <div class="two">
+          <div class="mini-video">
+            <video controls muted loop playsinline preload="none" poster="examples/csv-dedupe/assets/video/launch-poster.jpg" aria-label="20-second launch video for csv-dedupe">
+              <source src="examples/csv-dedupe/assets/video/launch-video.mp4" type="video/mp4">
+            </video>
+          </div>
+          <pre class="term"><span class="c">// assets/video/scenes.md (generated)</span>
+00.0–03.0  <span class="blue">Hook</span>     Your customer export lists
+                     Ana three times.
+03.0–06.5  <span class="blue">Reveal</span>   csv-dedupe. Removes duplicate
+                     rows from CSV exports...
+06.5–11.5  <span class="blue">Real run</span> python3 cli.py ...
+11.5–16.5  <span class="blue">Proof</span>    4 passing tests · 60 lines
+16.5–20.0  <span class="blue">Get it</span>   pip install -e .</pre>
+        </div>
+      </li>
+    </ol>
+
+    <p style="margin-top:40px"><a class="btn" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/tree/main/examples/csv-dedupe">Browse every generated file on GitHub →</a></p>
+  </div>
+</section>
+
+<section id="improvements">
+  <div class="wrap">
+    <div class="kicker">What we fixed</div>
+    <h2>Running it on real repos made it better</h2>
+    <p class="section-lede">Before the case study, we ran the tool on three small sample projects and read every line it wrote. Each problem below turned up that way, was fixed, and now has a test so it can't come back.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="v">46 → 52</div><div class="k">tests in the suite</div></div>
+      <div class="stat"><div class="v">3</div><div class="k">worked examples: Python, Node, and csv-dedupe</div></div>
+      <div class="stat"><div class="v">0</div><div class="k">errors or warnings on every example</div></div>
+      <div class="stat"><div class="v">20s</div><div class="k">launch video, rendered from a storyboard</div></div>
+    </div>
+
+    <div class="fixes">
+      <div class="fix">
+        <h3>The tagline was nonsense</h3>
+        <p class="why">It pasted the package description into a canned template.</p>
+        <div class="pair">
+          <div class="b">Tired of opaque estimates and manual bottlenecks in a tiny cli that splits a restaurant bill fairly, tip included?</div>
+          <div class="a">A tiny CLI that splits a restaurant bill fairly, tip included.</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>Diagrams made up a domain</h3>
+        <p class="why">Any <code>data/</code> folder was labelled with a leftover from another project.</p>
+        <div class="pair">
+          <div class="b">STORAGE · Datasets &amp; Pricing Sto…</div>
+          <div class="a">STORAGE · Data Files</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>The auto-fixer broke the license badge</h3>
+        <p class="why">Its pattern swallowed the badge color, which left a broken image.</p>
+        <div class="pair">
+          <div class="b">img.shields.io/badge/license-MIT?style=flat-square</div>
+          <div class="a">img.shields.io/badge/license-MIT-blue?style=flat-square</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>Node projects had their tests miscounted</h3>
+        <p class="why">It counted test files, not test cases.</p>
+        <div class="pair">
+          <div class="b">tests · 1 passed   (habit-streak has 2 tests in 1 file)</div>
+          <div class="a">tests · 2 passed</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>Evidence links pointed at folders that didn't exist</h3>
+        <p class="why">Line counts always cited <code>src/</code>, and test counts always cited <code>tests/</code>.</p>
+        <div class="pair">
+          <div class="b">habit-streak: 0 fatal errors, 2 warnings   (badge → tests/, which doesn't exist)</div>
+          <div class="a">habit-streak: 0 fatal errors, 0 warnings</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>A drawing was called a real run</h3>
+        <p class="why">The hero image is drawn, but the text under it claimed otherwise.</p>
+        <div class="pair">
+          <div class="b">That run is real, and it is the whole pitch…</div>
+          <div class="a">Illustrated preview of the quickstart, not a screen recording.</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>The video storyboard was a template</h3>
+        <p class="why">Every repo got the same scenes, which were about the tool itself.</p>
+        <div class="pair">
+          <div class="b">Watch csv-dedupe execute live in the sandbox. … generate zero-drift docs today.</div>
+          <div class="a">Your customer export lists Ana three times. → One command: python3 cli.py.</div>
+        </div>
+      </div>
+      <div class="fix">
+        <h3>There was no actual video</h3>
+        <p class="why">It stopped at a storyboard file, and nothing embedded a video.</p>
+        <div class="pair">
+          <div class="b">brag_spec.json only; README top image: drawn SVG</div>
+          <div class="a">Skill Phase 3 renders it with /brag; produce embeds the GIF, linked to the MP4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="limits">
+      <b>What it still can't do</b>
+      <ul>
+        <li>The CLI alone can't render video. That step needs an AI agent with /brag, Node 22+, and ffmpeg. Without them you get the storyboard and the labelled drawing.</li>
+        <li>The auditor assumes every number in a README describes the repo itself, so a README that quotes another project's numbers can trip it.</li>
+        <li>The "real run" command is guessed from the entrypoint, so the agent has to add realistic arguments.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="kicker">Try it</div>
+    <h2>Pick your path</h2>
+    <p class="section-lede">All three end the same way: a README where every number is checked against the code.</p>
+    <div class="tracks">
+      <div class="track">
+        <h3>Never used a terminal</h3>
+        <p>Two copy-paste commands. Python gets installed for you.</p>
+<pre class="term"><span class="c"># Mac: open Terminal, paste, press Enter</span>
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+<span class="c"># open a new Terminal window, then</span>
+uv tool install --python 3.12 git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git</pre>
+        <a class="more" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/blob/main/docs/INSTALL.md#track-a-never-used-a-terminal">Step-by-step guide, with Windows →</a>
+      </div>
+      <div class="track">
+        <h3>Developer</h3>
+        <p>Python 3.11+. Commit your README first, because <code>produce</code> overwrites it.</p>
+<pre class="term">pipx install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git
+
+agentic-readme ground .
+<span class="c"># edit hook: in story.yaml</span>
+agentic-readme produce .
+agentic-readme verify .</pre>
+        <a class="more" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/blob/main/docs/INSTALL.md#use-it-in-ci">Add it to CI →</a>
+      </div>
+      <div class="track">
+        <h3>Claude Code, with the video</h3>
+        <p>Install the skill, then just ask. It runs all five steps and asks before installing /brag.</p>
+<pre class="term">mkdir -p ~/.claude/skills/agentic-readme
+curl -o ~/.claude/skills/agentic-readme/SKILL.md \
+  https://raw.githubusercontent.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/main/skills/agentic-readme/SKILL.md
+
+<span class="c"># then, in your project:</span>
+"Use agentic-readme to write my README, with a launch video."</pre>
+        <a class="more" href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/blob/main/skills/agentic-readme/SKILL.md">Read the skill →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Agentic-ReadMe-Creator · MIT license</span>
+    <span><a href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator">Source</a> · <a href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/tree/main/examples">Examples</a> · <a href="https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator/blob/main/docs/LAUNCH_VIDEO.md">How the video was made</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -49,3 +49,6 @@ assets/video/src/gifframes/
 assets/video/src/mp4frames/
 assets/video/src/stills/
 assets/video/src/score.wav
+
+# Local preview server config
+.claude/launch.json

@@ -6,6 +6,9 @@ Two small projects, each run through the full pipeline. Everything in these fold
 | :--- | :--- | :--- | :--- |
 | [`tip-splitter/`](tip-splitter/) | Python + pytest | CLI that splits a restaurant bill, tip included | [README.md](tip-splitter/README.md) |
 | [`habit-streak/`](habit-streak/) | Node + `node --test` | Finds the longest run of consecutive days in a list of dates | [README.md](habit-streak/README.md) |
+| [`csv-dedupe/`](csv-dedupe/) | Python + pytest, **with launch video** | Removes duplicate rows from CSV exports | [README.md](csv-dedupe/README.md) |
+
+`csv-dedupe` also went through Phase 3: the hook was rewritten problem-first, and the launch video was rendered with /brag and embedded by `produce`. The [case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study) walks through every step with real output.
 
 ## What the pipeline added to each folder
 
@@ -36,6 +39,12 @@ agentic-readme run examples/habit-streak
 ```
 
 Each run finishes with `0 fatal errors, 0 warnings`.
+
+For `csv-dedupe`, skip `ground` so you keep its hand-edited hook, because `ground` (and `run`) rewrite `story.yaml`:
+
+```bash
+agentic-readme produce examples/csv-dedupe && agentic-readme verify examples/csv-dedupe
+```
 
 ## Watch it catch a lie
 
