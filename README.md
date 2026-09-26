@@ -7,13 +7,16 @@
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 41 passed" src="https://img.shields.io/badge/tests-41%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 46 passed" src="https://img.shields.io/badge/tests-46%20passed-success?style=flat-square"></a>
   <a href="skills/agentic-readme/SKILL.md"><img alt="claude skill ready" src="https://img.shields.io/badge/claude%20skill-ready-blueviolet?style=flat-square"></a>
   <a href="mcp.json"><img alt="mcp protocol 2024-11-05" src="https://img.shields.io/badge/mcp-2024--11--05-emerald?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <img alt="Terminal execution of Agentic-ReadMe-Creator: running verified pipeline, executing test verification, and outputting zero-drift documentation assets." src="assets/demo/hero-demo.svg" width="760">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo/hero-demo-static.svg">
+    <img alt="Terminal execution of Agentic-ReadMe-Creator: running verified pipeline, executing test verification, and outputting zero-drift documentation assets." src="assets/demo/hero-demo.svg" width="760">
+  </picture>
 </p>
 
 <p align="center">
@@ -170,8 +173,8 @@ See the [GPT Integration Guide](integrations/gpt/README.md) for full action rout
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 41 passing tests verifying core system invariants. | `test_count: 41` | [`tests`](tests) | ✅ Verified |
-| Modular architecture spanning 4735 lines of code across pipeline stages. | `loc: 4735` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 46 passing tests verifying core system invariants. | `test_count: 46` | [`tests`](tests) | ✅ Verified |
+| Modular architecture spanning 4991 lines of code across pipeline stages. | `loc: 4991` | [`src/`](src/) | ✅ Verified |
 | Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 | Claude Code and Claude Agent SDK skill specification. | `skill: agentic-readme` | [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) | ✅ Verified |
 | Model Context Protocol (MCP) server configuration. | `protocol: 2024-11-05` | [`mcp.json`](mcp.json) | ✅ Verified |

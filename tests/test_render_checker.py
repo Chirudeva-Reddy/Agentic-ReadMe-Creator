@@ -130,3 +130,86 @@ def test_render_checker_accepts_valid_svg(tmp_path: Path):
 
     render_findings = [f for f in report.findings if f.category == FindingCategory.RENDER_ISSUE]
     assert len(render_findings) == 0
+
+
+def test_render_checker_catches_missing_referenced_svg(tmp_path: Path):
+    """Verifies that missing SVG referenced in <img> or <source> is flagged."""
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<picture><source srcset="assets/missing-static.svg"><img alt="Hero demo" src="assets/missing.svg" width="760"></picture>\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    missing_findings = [f for f in report.findings if "does not exist on disk" in f.message]
+    assert len(missing_findings) >= 2
+
+
+def test_render_checker_catches_svg_missing_namespace(tmp_path: Path):
+    """Verifies that an SVG missing xmlns is detected."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    no_ns_svg = assets_dir / "no_ns.svg"
+    no_ns_svg.write_text('<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero" src="assets/no_ns.svg">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    ns_findings = [f for f in report.findings if "missing standard 'xmlns" in f.message]
+    assert len(ns_findings) == 1
+
+
+def test_render_checker_catches_svg_missing_dimensions(tmp_path: Path):
+    """Verifies that an SVG without viewBox or dimensions is detected."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    no_dim_svg = assets_dir / "no_dim.svg"
+    no_dim_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40"/></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero" src="assets/no_dim.svg">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    dim_findings = [f for f in report.findings if "missing 'viewBox' or ('width' and 'height')" in f.message]
+    assert len(dim_findings) == 1
+
+
+def test_render_checker_catches_external_css_import(tmp_path: Path):
+    """Verifies that @import in SVG style tags is detected and rejected."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    ext_css_svg = assets_dir / "ext_css.svg"
+    ext_css_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@import url("https://fonts.googleapis.com/css?family=Roboto");</style><text x="10" y="20">Hi</text></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<img alt="Hero" src="assets/ext_css.svg">\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    ext_findings = [f for f in report.findings if "external stylesheet reference" in f.message]
+    assert len(ext_findings) == 1
+
+
+def test_render_checker_accepts_picture_with_static_and_animated_svg(tmp_path: Path):
+    """Verifies that a <picture> element referencing valid static and animated SVGs passes."""
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(parents=True)
+    anim_svg = assets_dir / "hero.svg"
+    static_svg = assets_dir / "hero-static.svg"
+
+    anim_svg.write_text('<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 800 380" width="800" height="380"><style>@keyframes blink { 0% { opacity: 1; } }</style><rect width="100%" height="100%" fill="#1e1e2e"/><text x="30" y="80">Animated</text></svg>', encoding="utf-8")
+    static_svg.write_text('<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 800 380" width="800" height="380"><rect width="100%" height="100%" fill="#1e1e2e"/><text x="30" y="80">Static</text></svg>', encoding="utf-8")
+
+    readme = tmp_path / "README.md"
+    readme.write_text('# Project\n<picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/hero-static.svg"><img alt="Hero demo" src="assets/hero.svg" width="760"></picture>\n', encoding="utf-8")
+
+    checker = RenderChecker(tmp_path)
+    report = checker.check(readme)
+
+    assert report.fatal_count == 0
+    assert len([f for f in report.findings if f.category == FindingCategory.RENDER_ISSUE]) == 0

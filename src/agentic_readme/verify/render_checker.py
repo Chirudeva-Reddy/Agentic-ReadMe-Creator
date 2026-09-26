@@ -171,6 +171,7 @@ class RenderChecker:
         report: VerificationReport,
     ) -> None:
         """Check that referenced local files and assets exist on disk."""
+        # 1. Markdown links [text](url)
         link_matches = re.finditer(r'\[.*?\]\((?!https?://|#)(.*?)\)', readme_text)
         for m in link_matches:
             target_path_str = m.group(1).split("#")[0].strip()
@@ -185,6 +186,57 @@ class RenderChecker:
                         expected="Existing file or directory in repo",
                         actual=target_path_str,
                         suggested_fix=f"Create '{target_path_str}' or adjust the link target.",
+                    )
+
+        # 2. Markdown images ![alt](url)
+        img_matches = re.finditer(r'!\[.*?\]\((?!https?://|#)(.*?)\)', readme_text)
+        for m in img_matches:
+            target_path_str = m.group(1).split("#")[0].strip()
+            if target_path_str:
+                resolved = (self.repo_dir / target_path_str).resolve()
+                if not resolved.exists():
+                    report.add_finding(
+                        category=FindingCategory.BROKEN_LINK,
+                        severity=FindingSeverity.FATAL,
+                        message=f"Referenced image does not exist on disk: '{target_path_str}'.",
+                        location=f"{readme_path.name}",
+                        expected="Existing image file in repo",
+                        actual=target_path_str,
+                        suggested_fix=f"Provide image asset '{target_path_str}' or adjust link.",
+                    )
+
+        # 3. HTML <img> tags
+        html_img_matches = re.finditer(r'<img\b[^>]*\bsrc=["\'](?!https?://|#)([^"\'>]+)["\']', readme_text, re.IGNORECASE)
+        for m in html_img_matches:
+            target_path_str = m.group(1).split("#")[0].strip()
+            if target_path_str:
+                resolved = (self.repo_dir / target_path_str).resolve()
+                if not resolved.exists():
+                    report.add_finding(
+                        category=FindingCategory.BROKEN_LINK,
+                        severity=FindingSeverity.FATAL,
+                        message=f"Referenced HTML <img> src does not exist on disk: '{target_path_str}'.",
+                        location=f"{readme_path.name}",
+                        expected="Existing image file in repo",
+                        actual=target_path_str,
+                        suggested_fix=f"Provide image asset '{target_path_str}' or adjust src.",
+                    )
+
+        # 4. HTML <source> tags
+        html_source_matches = re.finditer(r'<source\b[^>]*\bsrcset=["\'](?!https?://|#)([^"\'>]+)["\']', readme_text, re.IGNORECASE)
+        for m in html_source_matches:
+            target_path_str = m.group(1).split("#")[0].strip()
+            if target_path_str:
+                resolved = (self.repo_dir / target_path_str).resolve()
+                if not resolved.exists():
+                    report.add_finding(
+                        category=FindingCategory.BROKEN_LINK,
+                        severity=FindingSeverity.FATAL,
+                        message=f"Referenced HTML <source> srcset does not exist on disk: '{target_path_str}'.",
+                        location=f"{readme_path.name}",
+                        expected="Existing source asset in repo",
+                        actual=target_path_str,
+                        suggested_fix=f"Provide asset '{target_path_str}' or adjust srcset.",
                     )
 
     def _check_svg_assets(
@@ -206,20 +258,27 @@ class RenderChecker:
                     svg_paths.add(f.resolve())
 
         # 2. Collect SVGs referenced in README (markdown images, <img>, <source>)
-        for m in re.finditer(r'!\[.*?\]\((?!https?://)([^)#\s]+\.svg)[^)]*\)', readme_text, re.IGNORECASE):
-            resolved = (self.repo_dir / m.group(1)).resolve()
-            if resolved.exists() and resolved.is_file():
-                svg_paths.add(resolved)
-
-        for m in re.finditer(r'<img\b[^>]*\bsrc=["\'](?!https?://)([^"\'>]+\.svg)["\']', readme_text, re.IGNORECASE):
-            resolved = (self.repo_dir / m.group(1)).resolve()
-            if resolved.exists() and resolved.is_file():
-                svg_paths.add(resolved)
-
-        for m in re.finditer(r'<source\b[^>]*\bsrcset=["\'](?!https?://)([^"\'>]+\.svg)["\']', readme_text, re.IGNORECASE):
-            resolved = (self.repo_dir / m.group(1)).resolve()
-            if resolved.exists() and resolved.is_file():
-                svg_paths.add(resolved)
+        ref_patterns = [
+            r'!\[.*?\]\((?!https?://)([^)#\s]+\.svg)[^)]*\)',
+            r'<img\b[^>]*\bsrc=["\'](?!https?://)([^"\'>]+\.svg)["\']',
+            r'<source\b[^>]*\bsrcset=["\'](?!https?://)([^"\'>]+\.svg)["\']',
+        ]
+        for pat in ref_patterns:
+            for m in re.finditer(pat, readme_text, re.IGNORECASE):
+                rel_ref = m.group(1)
+                resolved = (self.repo_dir / rel_ref).resolve()
+                if not resolved.exists() or not resolved.is_file():
+                    report.add_finding(
+                        category=FindingCategory.RENDER_ISSUE,
+                        severity=FindingSeverity.FATAL,
+                        message=f"Referenced SVG asset does not exist on disk: '{rel_ref}'.",
+                        location=f"{readme_path.name}",
+                        expected="Existing SVG file in repository",
+                        actual="Missing asset",
+                        suggested_fix=f"Generate or restore '{rel_ref}'.",
+                    )
+                else:
+                    svg_paths.add(resolved)
 
         # 3. Validate each SVG
         for svg_file in sorted(svg_paths):
@@ -258,10 +317,52 @@ class RenderChecker:
                 )
                 continue
 
-            # Check for <foreignObject> (stripped or blocked by GitHub sanitizer)
+            # Verify root element is <svg>
+            tag_name = root.tag.split("}")[-1] if "}" in root.tag else root.tag
+            if tag_name.lower() != "svg":
+                report.add_finding(
+                    category=FindingCategory.RENDER_ISSUE,
+                    severity=FindingSeverity.FATAL,
+                    message=f"SVG '{rel_path}' root element is '<{tag_name}>', expected '<svg>'.",
+                    location=str(rel_path),
+                    expected="Root element <svg>",
+                    actual=f"<{tag_name}>",
+                    suggested_fix="Ensure valid SVG document with <svg> root element.",
+                )
+
+            # Verify SVG namespace
+            has_ns = root.tag.startswith("{http://www.w3.org/2000/svg}") or root.attrib.get("xmlns") == "http://www.w3.org/2000/svg"
+            if not has_ns:
+                report.add_finding(
+                    category=FindingCategory.RENDER_ISSUE,
+                    severity=FindingSeverity.FATAL,
+                    message=f"SVG '{rel_path}' is missing standard 'xmlns=\"http://www.w3.org/2000/svg\"' namespace declaration.",
+                    location=str(rel_path),
+                    expected="xmlns=\"http://www.w3.org/2000/svg\"",
+                    actual="Missing or non-standard namespace",
+                    suggested_fix="Add xmlns=\"http://www.w3.org/2000/svg\" to <svg> root tag.",
+                )
+
+            # Verify dimensions (viewBox or width/height) to prevent 0x0 empty boxes
+            has_viewbox = "viewBox" in root.attrib or "viewbox" in root.attrib
+            has_dims = ("width" in root.attrib and "height" in root.attrib)
+            if not has_viewbox and not has_dims:
+                report.add_finding(
+                    category=FindingCategory.RENDER_ISSUE,
+                    severity=FindingSeverity.FATAL,
+                    message=f"SVG '{rel_path}' is missing 'viewBox' or ('width' and 'height') attributes, causing 0x0 empty rendering.",
+                    location=str(rel_path),
+                    expected="viewBox or explicit width/height dimensions",
+                    actual="No viewBox or width/height attributes",
+                    suggested_fix="Add viewBox attribute (e.g. viewBox=\"0 0 800 380\") to root <svg> element.",
+                )
+
+            # Check for <foreignObject>, <script>, inline event handlers, and external references
             for el in root.iter():
-                tag_name = el.tag.split("}")[-1] if "}" in el.tag else el.tag
-                if tag_name.lower() == "foreignobject":
+                el_tag = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+                el_tag_lower = el_tag.lower()
+
+                if el_tag_lower == "foreignobject":
                     report.add_finding(
                         category=FindingCategory.RENDER_ISSUE,
                         severity=FindingSeverity.FATAL,
@@ -275,7 +376,7 @@ class RenderChecker:
                         suggested_fix="Replace <foreignObject> with native SVG <text> and <tspan> elements.",
                     )
                     break
-                elif tag_name.lower() == "script":
+                elif el_tag_lower == "script":
                     report.add_finding(
                         category=FindingCategory.RENDER_ISSUE,
                         severity=FindingSeverity.FATAL,
@@ -289,10 +390,23 @@ class RenderChecker:
                         suggested_fix="Remove JavaScript from SVG assets.",
                     )
                     break
+                elif el_tag_lower == "style":
+                    # Check for external CSS imports which GitHub Camo blocks
+                    if el.text and ("@import" in el.text or "url(http" in el.text.lower()):
+                        report.add_finding(
+                            category=FindingCategory.RENDER_ISSUE,
+                            severity=FindingSeverity.FATAL,
+                            message=f"SVG '{rel_path}' contains external stylesheet reference in <style>, blocked by GitHub Camo proxy.",
+                            location=str(rel_path),
+                            expected="Self-contained CSS without external imports",
+                            actual="External CSS import detected",
+                            suggested_fix="Remove external @import or url() from SVG <style>.",
+                        )
+                        break
 
-            # Check for inline event handlers (e.g. onload, onclick)
+            # Check for inline event handlers and external image/use references
             for el in root.iter():
-                for attr in el.attrib:
+                for attr, val in el.attrib.items():
                     if attr.lower().startswith("on"):
                         report.add_finding(
                             category=FindingCategory.RENDER_ISSUE,
@@ -302,5 +416,16 @@ class RenderChecker:
                             expected="No inline JS event handlers",
                             actual=f"Attribute '{attr}' detected",
                             suggested_fix="Remove event handlers from SVG elements.",
+                        )
+                        break
+                    if attr.lower() in ("href", "{http://www.w3.org/1999/xlink}href") and (val.startswith("http://") or val.startswith("https://")):
+                        report.add_finding(
+                            category=FindingCategory.RENDER_ISSUE,
+                            severity=FindingSeverity.WARNING,
+                            message=f"SVG '{rel_path}' contains external reference '{val}', which may be blocked or broken by GitHub Camo.",
+                            location=str(rel_path),
+                            expected="Local or inline assets",
+                            actual=f"External reference '{val}'",
+                            suggested_fix="Embed resource data inline or use local assets.",
                         )
                         break

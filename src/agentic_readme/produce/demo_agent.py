@@ -42,14 +42,19 @@ class DemoAgent:
         tape_path = self.output_dir / "demo.tape"
         gif_path = self.output_dir / "hero-demo.gif"
         preview_svg_path = self.output_dir / "hero-demo.svg"
+        static_svg_path = self.output_dir / "hero-demo-static.svg"
 
         # Build VHS tape content
         tape_content = self._generate_vhs_tape(story)
         tape_path.write_text(tape_content, encoding="utf-8")
 
-        # Generate lightweight hero asset (SVG terminal replay fallback)
-        hero_svg = self._generate_terminal_hero_svg(story)
+        # Generate lightweight hero asset with CSS blinking cursor animation
+        hero_svg = self._generate_terminal_hero_svg(story, animated=True)
         preview_svg_path.write_text(hero_svg, encoding="utf-8")
+
+        # Generate static fallback asset without CSS animations (prefers-reduced-motion / print)
+        static_svg = self._generate_terminal_hero_svg(story, animated=False)
+        static_svg_path.write_text(static_svg, encoding="utf-8")
 
         # Create lightweight starter GIF placeholder (or use SVG)
         # Note: If VHS binary is available in environment, user can run vhs assets/demo/demo.tape
@@ -61,6 +66,7 @@ class DemoAgent:
         return {
             "tape_file": tape_path,
             "hero_asset": preview_svg_path,
+            "static_asset": static_svg_path,
             "hero_gif_target": gif_path,
             "alt_text": alt_text,
             "max_size_bytes": 5 * 1024 * 1024,  # 5 MB hard limit
@@ -99,7 +105,7 @@ Sleep 1s
 Sleep 3s
 """
 
-    def _generate_terminal_hero_svg(self, story: StorySpec) -> str:
+    def _generate_terminal_hero_svg(self, story: StorySpec, animated: bool = True) -> str:
         """Lightweight terminal window representation as an SVG hero asset."""
         cmds = story.quickstart_commands
         exec_cmds = [
@@ -107,6 +113,9 @@ Sleep 3s
             if not c.startswith("git clone") and not c.startswith("pip install")
         ]
         cmd_str = exec_cmds[-1] if exec_cmds else (cmds[0] if cmds else f"./run_{story.repo_name}.sh")
+        # Sanitize fallback if it still contains raw placeholder
+        if "<repo-url>" in cmd_str:
+            cmd_str = f"python3 src/agentic_readme/cli.py"
 
         # Determine terminal output stages from architecture nodes or claims
         nodes = story.architecture_nodes
@@ -129,8 +138,31 @@ Sleep 3s
         claim1_escaped = _xml_escape(_trim(claim1, 80))
         claim2_escaped = _xml_escape(_trim(claim2, 80))
 
-        return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="800" height="380">
-  <rect width="100%" height="100%" rx="10" fill="#1e1e2e" stroke="#313244" stroke-width="1"/>
+        if animated:
+            style_block = """  <style>
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .terminal-cursor {
+      animation: blink 1s infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .terminal-cursor {
+        animation: none;
+        opacity: 1;
+      }
+    }
+  </style>
+"""
+            cursor_element = '<tspan class="terminal-cursor" fill="#a6e3a1"> ▋</tspan>'
+        else:
+            style_block = ""
+            cursor_element = '<tspan fill="#a6e3a1"> ▋</tspan>'
+
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 800 380" width="800" height="380">
+{style_block}  <rect width="100%" height="100%" rx="10" fill="#1e1e2e" stroke="#313244" stroke-width="1"/>
   <!-- Window buttons -->
   <circle cx="25" cy="25" r="6" fill="#f38ba8"/>
   <circle cx="45" cy="25" r="6" fill="#f9e2af"/>
@@ -140,7 +172,7 @@ Sleep 3s
 
   <!-- Terminal content -->
   <text x="30" y="80" font-size="14" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#cdd6f4">
-    <tspan fill="#a6e3a1">$ </tspan>{cmd_escaped}
+    <tspan fill="#a6e3a1">$ </tspan>{cmd_escaped}{cursor_element}
   </text>
   <text x="30" y="115" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#89b4fa">[1/3] {stage1_escaped}</text>
   <text x="50" y="140" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" fill="#a6adc8">✔ Initialized verified components</text>

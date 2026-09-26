@@ -10,15 +10,15 @@ solution: Agentic-ReadMe-Creator provides a verified, media-rich readme pipeline
   in real project runs, grounding system execution and performance in deterministic
   data and verified automated test invariants.
 key_claims:
-- claim: Automated test suite with 41 passing tests verifying core system invariants.
+- claim: Automated test suite with 46 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 41
+    test_count: 46
   verified: true
-- claim: Modular architecture spanning 4735 lines of code across pipeline stages.
+- claim: Modular architecture spanning 4991 lines of code across pipeline stages.
   evidence_file: src/
   metrics:
-    loc: 4735
+    loc: 4991
   verified: true
 - claim: Open source distribution under the MIT license.
   evidence_file: LICENSE

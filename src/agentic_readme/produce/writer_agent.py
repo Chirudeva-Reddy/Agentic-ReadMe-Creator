@@ -91,7 +91,10 @@ class WriterAgent:
 </p>
 
 <p align="center">
-  <img alt="{hero_alt}" src="assets/demo/hero-demo.svg" width="760">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="assets/demo/hero-demo-static.svg">
+    <img alt="{hero_alt}" src="assets/demo/hero-demo.svg" width="760">
+  </picture>
 </p>
 
 <p align="center">

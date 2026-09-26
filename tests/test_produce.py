@@ -77,6 +77,7 @@ def test_demo_agent(tmp_path: Path):
 
     assert res["tape_file"].exists()
     assert res["hero_asset"].exists()
+    assert res["static_asset"].exists()
     tape_text = res["tape_file"].read_text(encoding="utf-8")
     assert 'Type "pytest"' in tape_text
     assert res["max_size_bytes"] == 5 * 1024 * 1024
@@ -97,7 +98,9 @@ def test_demo_agent_xml_escaping(tmp_path: Path):
     res = agent.produce(story, ledger)
 
     svg_path = res["hero_asset"]
+    static_svg_path = res["static_asset"]
     assert svg_path.exists()
+    assert static_svg_path.exists()
 
     # Must parse without XML syntax errors
     tree = ET.parse(svg_path)
@@ -105,8 +108,16 @@ def test_demo_agent_xml_escaping(tmp_path: Path):
     assert root.attrib["width"] == "800"
     assert root.attrib["height"] == "380"
     assert root.attrib["viewBox"] == "0 0 800 380"
+    assert root.attrib["version"] == "1.1"
+
     content = svg_path.read_text(encoding="utf-8")
+    assert content.startswith('<?xml version="1.0" encoding="UTF-8"?>')
+    assert "@keyframes blink" in content
     assert "&amp;&amp;" in content or "&amp;" in content
+
+    # Static fallback should also be valid XML
+    static_tree = ET.parse(static_svg_path)
+    assert static_tree.getroot().attrib["viewBox"] == "0 0 800 380"
 
 
 def test_video_agent(tmp_path: Path):
@@ -138,8 +149,10 @@ def test_writer_agent_house_style(tmp_path: Path):
     assert 'href="tests/"' in content
     assert "tests-52%20passed" in content
 
-    # Check architecture <picture> with dark mode
+    # Check hero demo <picture> with static fallback and architecture <picture> with dark mode
     assert "<picture>" in content
+    assert "(prefers-reduced-motion: reduce)" in content
+    assert "assets/demo/hero-demo-static.svg" in content
     assert "(prefers-color-scheme: dark)" in content
     assert "architecture.excalidraw" in content
 
