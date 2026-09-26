@@ -7,7 +7,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 48 passed" src="https://img.shields.io/badge/tests-48%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 53 passed" src="https://img.shields.io/badge/tests-53%20passed-success?style=flat-square"></a>
   <a href="skills/agentic-readme/SKILL.md"><img alt="claude skill ready" src="https://img.shields.io/badge/claude%20skill-ready-blueviolet?style=flat-square"></a>
   <a href="integrations/mcp/mcp.json"><img alt="mcp protocol 2024-11-05" src="https://img.shields.io/badge/mcp-2024--11--05-emerald?style=flat-square"></a>
 </p>
@@ -76,7 +76,7 @@ Real runs, with the output committed. Nothing was edited by hand.
 | [`tip-splitter`](examples/tip-splitter/) | Python CLI + pytest | [README.md](examples/tip-splitter/README.md) | 23 facts checked, 0 errors |
 | [`habit-streak`](examples/habit-streak/) | Node.js + `node --test` | [README.md](examples/habit-streak/README.md) | 18 facts checked, 0 errors |
 | [`csv-dedupe`](examples/csv-dedupe/) | Python CLI, with launch video | [README.md](examples/csv-dedupe/README.md) | 23 facts checked, 0 errors ([case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study)) |
-| this repo | Python package, 48 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
+| this repo | Python package, 53 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
 
 See [examples/README.md](examples/README.md) for what each generated file is and how to run them.
 
@@ -123,7 +123,7 @@ For reviewers who want the engineering summary:
 
 - **A staged agent pipeline with a human checkpoint.** Grounding writes locked contracts that the producers can only read, and a verifier loop audits the output ([ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 - **Verification rather than generation.** A claim auditor cross-checks the README, diagrams, and video storyboard against a facts ledger, with deterministic auto-fixes ([`verify/`](src/agentic_readme/verify/)).
-- **Tested.** 48 pytest tests cover grounding, production, auditing, rendering rules, and an end-to-end pipeline run ([`tests/`](tests/)).
+- **Tested.** 53 pytest tests cover grounding, production, auditing, rendering rules, and an end-to-end pipeline run ([`tests/`](tests/)).
 - **Packaged three ways.** A Typer CLI, an MCP JSON-RPC server, and a Claude Code skill, plus OpenAI tool schemas ([`integrations/`](integrations/)).
 - **Uses its own output.** This README, its diagram, and its badges come from the tool's own run on this repo, and the [launch video](docs/LAUNCH_VIDEO.md) shows real output from the examples.
 
@@ -133,8 +133,8 @@ For reviewers who want the engineering summary:
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 48 passing tests verifying core system invariants. | `test_count: 48` | [`tests`](tests) | ✅ Verified |
-| 3800 lines of code in the project source. | `loc: 3800` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 53 passing tests verifying core system invariants. | `test_count: 53` | [`tests`](tests) | ✅ Verified |
+| 3869 lines of code in the project source. | `loc: 3869` | [`src/`](src/) | ✅ Verified |
 | Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 | Claude Code and Claude Agent SDK skill specification. | `skill: agentic-readme` | [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) | ✅ Verified |
 | Model Context Protocol (MCP) server configuration. | `protocol: 2024-11-05` | [`mcp.json`](integrations/mcp/mcp.json) | ✅ Verified |
