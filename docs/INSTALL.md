@@ -64,7 +64,7 @@ Go into your project folder. The easiest way is to type `cd ` (with a space afte
 agentic-readme run .
 ```
 
-The `.` means "this folder". When it finishes, open `README.md` in the folder to see the result. `facts.json` lists every number the README uses and the file each one came from.
+The `.` means "this folder". When it finishes, open `README.md` in the folder to see the result. `.agentic-readme/facts.json` lists every number the README uses and the file each one came from.
 
 ### Updating or uninstalling
 
@@ -102,14 +102,14 @@ pytest
 
 | Command | What it does | Writes files? |
 | :--- | :--- | :--- |
-| `agentic-readme ground <repo> [--hook "..."] [--audience "..."]` | Reads the code, runs its tests, and writes `facts.json` + `story.yaml` | Yes, contracts only |
+| `agentic-readme ground <repo> [--hook "..."] [--audience "..."]` | Reads the code, runs its tests, and writes `.agentic-readme/facts.json` + `story.yaml` | Yes, contracts only |
 | `agentic-readme produce <repo>` | Builds `README.md`, diagrams, demo tape, and video storyboard from those two files | Yes, overwrites `README.md` |
 | `agentic-readme verify <repo>` | Checks every claim, link, and badge; auto-fixes drift; exits `1` on fatal findings | Only auto-fixes |
 | `agentic-readme run <repo>` | `ground` → `produce` → `verify` in one go | Yes |
-| `agentic-readme audit README.md --facts facts.json` | Read-only check of any README against a ledger | No |
+| `agentic-readme audit README.md --facts .agentic-readme/facts.json` | Read-only check of any README against a ledger | No |
 | `agentic-readme mcp` | Starts the MCP stdio server | No |
 
-The recommended loop is `ground`, then review `story.yaml` (especially `hook:`, which is the first line people read), then `produce`, then `verify`.
+The recommended loop is `ground`, then review `.agentic-readme/story.yaml` (especially `hook:`, which is the first line people read), then `produce`, then `verify`.
 
 ### Use it in CI
 
@@ -127,7 +127,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install git+https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator.git
-      - run: agentic-readme audit README.md --facts facts.json
+      - run: agentic-readme audit README.md --facts .agentic-readme/facts.json
 ```
 
 ### Optional media tools
@@ -144,6 +144,15 @@ The pipeline writes scripts for these tools but doesn't need them installed:
 Install the CLI first (Track A or B), then connect it.
 
 ### Claude Code
+
+Install it as a plugin, from inside Claude Code:
+
+```text
+/plugin marketplace add Chirudeva-Reddy/Agentic-ReadMe-Creator
+/plugin install agentic-readme@agentic-readme
+```
+
+Or copy the skill file directly:
 
 ```bash
 mkdir -p ~/.claude/skills/agentic-readme
@@ -193,4 +202,4 @@ See the [GPT integration guide](../integrations/gpt/README.md) for function-call
 | `requires a different Python: 3.9.x` | Your Python is too old. Use the Track A command, which pulls Python 3.12 automatically. |
 | Test count is `0` or missing | The tool looks for `tests/` or `test/` (pytest), `*.test.js` / `*.spec.js` (Node), or `#[test]` (Rust). |
 | `Badge links to missing evidence target` | A badge points to a file that doesn't exist. Add the file (e.g. `LICENSE`) or remove the badge. |
-| README came out generic | Edit `hook:` in `story.yaml` (or pass `--hook` to `ground`), then run `produce` again. |
+| README came out generic | Edit `hook:` in `.agentic-readme/story.yaml` (or pass `--hook` to `ground`), then run `produce` again. |

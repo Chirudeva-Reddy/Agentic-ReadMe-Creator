@@ -49,7 +49,7 @@ Extract real repository metadata, run test suites, and produce locked narrative 
 agentic-readme ground <REPO_PATH> --audience "Developers, ML engineers" --hook "1-line pain hook"
 ```
 
-**Artifacts Generated**:
+**Artifacts Generated** (in `<REPO_PATH>/.agentic-readme/`):
 - `facts.json`: Immutable ledger of every version, test count, line of code, and benchmark metric.
 - `story.yaml`: Locked narrative contract (hook, problem, solution, key claims, architecture nodes, deliberate omissions).
 
@@ -86,7 +86,7 @@ agentic-readme verify <REPO_PATH>
 To run a standalone audit on an existing README:
 
 ```bash
-agentic-readme audit <REPO_PATH>/README.md --facts <REPO_PATH>/facts.json
+agentic-readme audit <REPO_PATH>/README.md --facts <REPO_PATH>/.agentic-readme/facts.json
 ```
 
 Or run Phases 0–2 end-to-end:

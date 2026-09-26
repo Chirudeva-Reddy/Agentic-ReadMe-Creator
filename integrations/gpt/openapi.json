@@ -25,7 +25,7 @@
                 "type": "object",
                 "properties": {
                   "readme_path": { "type": "string", "default": "README.md" },
-                  "facts_file": { "type": "string", "default": "facts.json" }
+                  "facts_file": { "type": "string", "default": ".agentic-readme/facts.json" }
                 },
                 "required": ["readme_path", "facts_file"]
               }

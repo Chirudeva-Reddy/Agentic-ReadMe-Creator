@@ -5,7 +5,7 @@
 **Agentic ReadMe Creator** is a verified, media-rich documentation pipeline grounded in real runs of your project. Rather than treating documentation as unconstrained LLM generation, it treats documentation as a verified compiler problem:
 
 1. **Ground** every claim and metric in verifiable outputs.
-2. **Lock** an immutable contract (`story.yaml` + `facts.json`) before parallel fan-out.
+2. **Lock** an immutable contract (`story.yaml` + `facts.json`, kept in `.agentic-readme/`) before parallel fan-out.
 3. **Produce** all media assets (diagrams, demos, launch video configs, README) from that single source of truth.
 4. **Audit** cross-asset consistency with an evaluator-optimizer loop to eliminate fact drift, leaked internal jargon, and GitHub rendering bugs before human review.
 

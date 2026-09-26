@@ -1,0 +1,13 @@
+{
+  "name": "agentic-readme",
+  "description": "Write a README from your code, then fail the build if the two ever disagree.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Chirudeva-Reddy",
+    "url": "https://github.com/Chirudeva-Reddy"
+  },
+  "license": "MIT",
+  "homepage": "https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/",
+  "repository": "https://github.com/Chirudeva-Reddy/Agentic-ReadMe-Creator",
+  "keywords": ["readme", "documentation", "verification", "skill"]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "agentic-readme",
+  "description": "Write a README from your code, then fail the build if the two ever disagree.",
+  "owner": {
+    "name": "Chirudeva-Reddy",
+    "url": "https://github.com/Chirudeva-Reddy"
+  },
+  "plugins": [
+    {
+      "name": "agentic-readme",
+      "source": "./",
+      "description": "Ground, produce, and verify a README, diagrams, and a launch video from the code itself."
+    }
+  ]
+}

@@ -15,8 +15,9 @@ Two small projects, each run through the full pipeline. Everything in these fold
 ```text
 tip-splitter/
 ├── cli.py, tests/, pyproject.toml, LICENSE   ← the original project (input)
-├── facts.json          ← Phase 0: every number found in the code, with the file it came from
-├── story.yaml          ← Phase 0: the pitch, claims, and quickstart (edit this to change the README)
+├── .agentic-readme/
+│   ├── facts.json      ← Phase 0: every number found in the code, with the file it came from
+│   └── story.yaml      ← Phase 0: the pitch, claims, and quickstart (edit this to change the README)
 ├── README.md           ← Phase 1: the generated README
 └── assets/
     ├── diagrams/       ← Phase 1: Excalidraw source + light, dark, and static SVGs
@@ -54,7 +55,7 @@ The point of the tool is that a README can't claim something the code doesn't ba
 2. Audit it:
 
    ```bash
-   agentic-readme audit examples/tip-splitter/README.md --facts examples/tip-splitter/facts.json
+   agentic-readme audit examples/tip-splitter/README.md --facts examples/tip-splitter/.agentic-readme/facts.json
    ```
 
 3. You get this, and the command exits with code 1 (so CI fails too):

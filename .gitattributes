@@ -1,0 +1,3 @@
+# Symlinks — never subject to text/EOL normalization
+.agents/skills/agentic-readme -text
+.claude/skills/agentic-readme -text

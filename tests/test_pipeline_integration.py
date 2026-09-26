@@ -38,8 +38,8 @@ def test_two():
     res = runner.run_all(auto_approve_gate=True)
 
     # 3. Assert Phase 0 contracts
-    assert (repo_dir / "story.yaml").exists()
-    assert (repo_dir / "facts.json").exists()
+    assert (repo_dir / ".agentic-readme" / "story.yaml").exists()
+    assert (repo_dir / ".agentic-readme" / "facts.json").exists()
     assert res["facts"].get_fact("test_count").value == 2
     assert res["facts"].get_fact("license").value == "MIT"
 
@@ -94,7 +94,6 @@ def test_two():
             "name": "agentic_readme_audit",
             "arguments": {
                 "readme_path": str(repo_dir / "README.md"),
-                "facts_file": str(repo_dir / "facts.json"),
             },
         },
     })
@@ -111,7 +110,7 @@ def test_two():
     assert "facts.json" in frontmatter["description"]
 
     # Verify mcp.json configuration
-    mcp_config_file = Path(__file__).resolve().parent.parent / "mcp.json"
+    mcp_config_file = Path(__file__).resolve().parent.parent / "integrations" / "mcp" / "mcp.json"
     assert mcp_config_file.exists()
     mcp_cfg = json.loads(mcp_config_file.read_text(encoding="utf-8"))
     assert "agentic-readme" in mcp_cfg["mcpServers"]
@@ -184,3 +183,14 @@ def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
     assert "README.md does not exist" in report.findings[0].message
 
 
+
+
+def test_contract_path_falls_back_to_legacy_root(tmp_path):
+    from agentic_readme.core.runner import contract_path
+
+    assert contract_path(tmp_path, "facts.json") == tmp_path / ".agentic-readme" / "facts.json"
+    (tmp_path / "facts.json").write_text("{}")
+    assert contract_path(tmp_path, "facts.json") == tmp_path / "facts.json"
+    (tmp_path / ".agentic-readme").mkdir()
+    (tmp_path / ".agentic-readme" / "facts.json").write_text("{}")
+    assert contract_path(tmp_path, "facts.json") == tmp_path / ".agentic-readme" / "facts.json"

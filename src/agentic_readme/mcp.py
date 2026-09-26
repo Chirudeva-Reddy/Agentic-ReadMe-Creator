@@ -17,7 +17,7 @@ from agentic_readme.core.models import (
     StorySpec,
     VerificationReport,
 )
-from agentic_readme.core.runner import PipelineRunner
+from agentic_readme.core.runner import PipelineRunner, contract_path
 from agentic_readme.verify.claim_auditor import ClaimAuditor
 from agentic_readme.verify.render_checker import RenderChecker
 from agentic_readme.verify.voice_editor import VoiceEditor
@@ -42,11 +42,10 @@ TOOLS: List[Dict[str, Any]] = [
                 },
                 "facts_file": {
                     "type": "string",
-                    "description": "Path to facts.json ground truth ledger (default: 'facts.json')",
-                    "default": "facts.json",
+                    "description": "Path to facts.json ground truth ledger (default: .agentic-readme/facts.json next to the README)",
                 },
             },
-            "required": ["readme_path", "facts_file"],
+            "required": ["readme_path"],
         },
     },
     {
@@ -79,7 +78,7 @@ TOOLS: List[Dict[str, Any]] = [
             "properties": {
                 "dir_path": {
                     "type": "string",
-                    "description": "Directory containing story.yaml and facts.json (default: '.')",
+                    "description": "Project directory; contracts are read from its .agentic-readme/ (default: '.')",
                     "default": ".",
                 },
             },
@@ -93,7 +92,7 @@ TOOLS: List[Dict[str, Any]] = [
             "properties": {
                 "dir_path": {
                     "type": "string",
-                    "description": "Directory containing README.md, assets/, and facts.json (default: '.')",
+                    "description": "Project directory containing README.md and .agentic-readme/facts.json (default: '.')",
                     "default": ".",
                 },
             },
@@ -126,7 +125,7 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         if name == "agentic_readme_audit":
             readme_path = Path(arguments.get("readme_path", "README.md"))
-            facts_file = Path(arguments.get("facts_file", "facts.json"))
+            facts_file = Path(arguments.get("facts_file") or contract_path(readme_path.parent, "facts.json"))
 
             if not readme_path.exists():
                 return {"isError": True, "content": [{"type": "text", "text": f"Error: README file not found: {readme_path}"}]}
@@ -169,15 +168,15 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
                 f"Phase 0 Grounding Complete:\n"
                 f"- Repository: {story.repo_name}\n"
                 f"- Facts Extracted: {len(ledger.facts)}\n"
-                f"- Contracts Generated: {repo_path / 'story.yaml'}, {repo_path / 'facts.json'}\n"
+                f"- Contracts Generated: {contract_path(repo_path, 'story.yaml')}, {contract_path(repo_path, 'facts.json')}\n"
                 f"- Hook: {story.hook}"
             )
             return {"isError": False, "content": [{"type": "text", "text": out_text}]}
 
         elif name == "agentic_readme_produce":
             dir_path = Path(arguments.get("dir_path", "."))
-            story_file = dir_path / "story.yaml"
-            facts_file = dir_path / "facts.json"
+            story_file = contract_path(dir_path, "story.yaml")
+            facts_file = contract_path(dir_path, "facts.json")
 
             if not story_file.exists() or not facts_file.exists():
                 return {"isError": True, "content": [{"type": "text", "text": f"Error: story.yaml or facts.json missing in directory: {dir_path}"}]}
@@ -202,11 +201,11 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         elif name == "agentic_readme_verify":
             dir_path = Path(arguments.get("dir_path", "."))
-            facts_file = dir_path / "facts.json"
+            facts_file = contract_path(dir_path, "facts.json")
             if not facts_file.exists():
                 return {"isError": True, "content": [{"type": "text", "text": f"Error: facts.json missing in directory: {dir_path}"}]}
 
-            story_file = dir_path / "story.yaml"
+            story_file = contract_path(dir_path, "story.yaml")
             story = StorySpec.load_yaml(story_file) if story_file.exists() else None
             ledger = FactsLedger.load(facts_file)
 

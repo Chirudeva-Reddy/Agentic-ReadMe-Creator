@@ -11,7 +11,7 @@ Any MCP-compatible client (Claude Desktop, Cursor, ChatGPT Desktop, Zed, or agen
 | Tool Name | Parameters | Description |
 | :--- | :--- | :--- |
 | `agentic_readme_audit` | `readme_path` (str), `facts_file` (str) | Mechanically audit a README against a facts ledger for drift, broken badges, leaked jargon, and voice issues. |
-| `agentic_readme_ground` | `repo_path` (str), `audience` (str), `hook` (str) | Phase 0 Grounding: Extract deterministic facts and generate `story.yaml` and `facts.json`. |
+| `agentic_readme_ground` | `repo_path` (str), `audience` (str), `hook` (str) | Phase 0 Grounding: Extract deterministic facts and generate `.agentic-readme/story.yaml` and `facts.json`. |
 | `agentic_readme_produce` | `dir_path` (str) | Phase 1 Production: Generate diagrams, demo tape, video specs, and candidate README. |
 | `agentic_readme_verify` | `dir_path` (str) | Phase 2 Verification: Run Evaluator-Optimizer loop on generated assets. |
 | `agentic_readme_run` | `repo_path` (str), `auto_approve` (bool) | Full 3-phase automated pipeline execution (Ground -> Produce -> Verify). |

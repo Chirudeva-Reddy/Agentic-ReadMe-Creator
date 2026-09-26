@@ -19,7 +19,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agentic_readme.core.models import FactsLedger, StorySpec
-from agentic_readme.core.runner import PipelineRunner
+from agentic_readme.core.runner import PipelineRunner, contract_path
 from agentic_readme.verify.claim_auditor import ClaimAuditor
 from agentic_readme.verify.render_checker import RenderChecker
 from agentic_readme.verify.voice_editor import VoiceEditor
@@ -42,16 +42,16 @@ def ground(
     """Phase 0: Ground repo facts into story.yaml and facts.json."""
     runner = PipelineRunner(repo_path, output_dir=output_dir)
     story, ledger = runner.phase_0_ground(target_audience=audience, custom_hook=hook)
-    console.print(f"[bold green]Phase 0 complete.[/bold green] Inspect story.yaml and facts.json before producing.")
+    console.print(f"[bold green]Phase 0 complete.[/bold green] Inspect .agentic-readme/story.yaml and facts.json before producing.")
 
 
 @app.command()
 def produce(
-    dir_path: Path = typer.Argument(Path("."), help="Directory containing story.yaml and facts.json"),
+    dir_path: Path = typer.Argument(Path("."), help="Project directory (contracts in .agentic-readme/)"),
 ):
     """Phase 1: Produce all media assets and README.md from locked story and facts."""
-    story_file = dir_path / "story.yaml"
-    facts_file = dir_path / "facts.json"
+    story_file = contract_path(dir_path, "story.yaml")
+    facts_file = contract_path(dir_path, "facts.json")
 
     if not story_file.exists() or not facts_file.exists():
         console.print("[red]Error: story.yaml or facts.json missing. Run 'ground' first.[/red]")
@@ -67,11 +67,11 @@ def produce(
 
 @app.command()
 def verify(
-    dir_path: Path = typer.Argument(Path("."), help="Directory containing README.md, assets, and facts.json"),
+    dir_path: Path = typer.Argument(Path("."), help="Project directory containing README.md and .agentic-readme/facts.json"),
 ):
     """Phase 2: Audit claims, check GitHub rendering rules, and clean voice."""
-    story_file = dir_path / "story.yaml"
-    facts_file = dir_path / "facts.json"
+    story_file = contract_path(dir_path, "story.yaml")
+    facts_file = contract_path(dir_path, "facts.json")
 
     if not facts_file.exists():
         console.print("[red]Error: facts.json missing. Cannot audit claims without ground truth.[/red]")

@@ -29,6 +29,19 @@ from agentic_readme.produce.video_agent import VideoAgent
 from agentic_readme.produce.writer_agent import WriterAgent
 from agentic_readme.verify.optimizer import EvaluatorOptimizer
 
+CONTRACTS_DIR = ".agentic-readme"
+
+
+def contract_path(root: Path, name: str) -> Path:
+    """Locate story.yaml / facts.json under root/.agentic-readme/.
+
+    Repos grounded before the folder existed keep theirs at the root; that copy is used
+    until a new one is written.
+    """
+    new = Path(root) / CONTRACTS_DIR / name
+    legacy = Path(root) / name
+    return legacy if legacy.exists() and not new.exists() else new
+
 
 class PipelineRunner:
     """Coordinates execution across Phase 0, Phase 1, and Phase 2."""
@@ -55,8 +68,9 @@ class PipelineRunner:
         ledger = analysis.facts_ledger
 
         # Save contracts
-        story_file = self.output_dir / "story.yaml"
-        facts_file = self.output_dir / "facts.json"
+        story_file = self.output_dir / CONTRACTS_DIR / "story.yaml"
+        facts_file = self.output_dir / CONTRACTS_DIR / "facts.json"
+        story_file.parent.mkdir(parents=True, exist_ok=True)
 
         story.save_yaml(story_file)
         ledger.save(facts_file)
@@ -133,7 +147,7 @@ class PipelineRunner:
 
         # Human Gate
         if not auto_approve_gate:
-            self.console.print("[bold yellow]⏸ HUMAN GATE: Please inspect story.yaml and facts.json before continuing.[/bold yellow]")
+            self.console.print("[bold yellow]⏸ HUMAN GATE: Please inspect .agentic-readme/story.yaml and facts.json before continuing.[/bold yellow]")
 
         # Phase 1
         produced_assets = self.phase_1_produce(story, ledger)

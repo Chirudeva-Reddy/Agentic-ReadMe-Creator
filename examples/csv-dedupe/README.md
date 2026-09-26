@@ -27,7 +27,7 @@
 
 ---
 
-**Every badge, number, and diagram node on this page is checked against [`facts.json`](facts.json)**, which was generated from this project's own code and test run.
+**Every badge, number, and diagram node on this page is checked against [`facts.json`](.agentic-readme/facts.json)**, which was generated from this project's own code and test run.
 
 ## How it works
 

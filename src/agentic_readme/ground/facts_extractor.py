@@ -399,12 +399,15 @@ class FactsExtractor:
             )
 
         # 2. MCP server protocol configuration
-        mcp_file = self.repo_path / "mcp.json"
-        if mcp_file.exists():
+        mcp_file = next(
+            (f for f in (self.repo_path / "integrations" / "mcp" / "mcp.json", self.repo_path / "mcp.json") if f.exists()),
+            None,
+        )
+        if mcp_file:
             ledger.add_fact(
                 key="protocol",
                 value="2024-11-05",
-                source_file="mcp.json",
+                source_file=str(mcp_file.relative_to(self.repo_path)),
                 source_type=FactSourceType.CONFIG,
                 description="Model Context Protocol specification version",
             )

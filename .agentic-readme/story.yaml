@@ -31,7 +31,7 @@ key_claims:
     skill: agentic-readme
   verified: true
 - claim: Model Context Protocol (MCP) server configuration.
-  evidence_file: mcp.json
+  evidence_file: integrations/mcp/mcp.json
   metrics:
     protocol: '2024-11-05'
   verified: true

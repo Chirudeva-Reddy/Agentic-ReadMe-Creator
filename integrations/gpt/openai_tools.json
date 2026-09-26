@@ -13,7 +13,7 @@
           },
           "facts_file": {
             "type": "string",
-            "description": "Path to the facts.json ground truth ledger (default: 'facts.json')"
+            "description": "Path to the facts.json ground truth ledger (default: '.agentic-readme/facts.json')"
           }
         },
         "required": ["readme_path", "facts_file"]
@@ -54,7 +54,7 @@
         "properties": {
           "dir_path": {
             "type": "string",
-            "description": "Directory containing story.yaml and facts.json (default: '.')"
+            "description": "Project directory; contracts are read from its .agentic-readme/ (default: '.')"
           }
         }
       }
@@ -70,7 +70,7 @@
         "properties": {
           "dir_path": {
             "type": "string",
-            "description": "Directory containing README.md, assets/, and facts.json (default: '.')"
+            "description": "Project directory containing README.md and .agentic-readme/facts.json (default: '.')"
           }
         }
       }

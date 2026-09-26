@@ -65,4 +65,4 @@ If creating a Custom GPT in ChatGPT's GPT Builder:
 
 ## 3. Model Context Protocol (MCP)
 
-For clients that connect via MCP (including ChatGPT Desktop MCP plugins, Cursor, and Claude Desktop), see the dedicated [MCP Configuration Guide](../mcp/README.md) or use root [`mcp.json`](../../mcp.json).
+For clients that connect via MCP (including ChatGPT Desktop MCP plugins, Cursor, and Claude Desktop), see the dedicated [MCP Configuration Guide](../mcp/README.md) or use [`mcp.json`](../mcp/mcp.json).

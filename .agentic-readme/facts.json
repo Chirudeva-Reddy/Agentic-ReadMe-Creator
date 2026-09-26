@@ -105,7 +105,7 @@
     "protocol": {
       "key": "protocol",
       "value": "2024-11-05",
-      "source_file": "mcp.json",
+      "source_file": "integrations/mcp/mcp.json",
       "source_type": "config",
       "description": "Model Context Protocol specification version",
       "unit": null,
