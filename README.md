@@ -7,7 +7,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 54 passed" src="https://img.shields.io/badge/tests-54%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 68 passed" src="https://img.shields.io/badge/tests-68%20passed-success?style=flat-square"></a>
   <a href="skills/agentic-readme/SKILL.md"><img alt="claude skill ready" src="https://img.shields.io/badge/claude%20skill-ready-blueviolet?style=flat-square"></a>
   <a href="integrations/mcp/mcp.json"><img alt="mcp protocol 2024-11-05" src="https://img.shields.io/badge/mcp-2024--11--05-emerald?style=flat-square"></a>
 </p>
@@ -76,7 +76,7 @@ Real runs, with the output committed. Nothing was edited by hand.
 | [`tip-splitter`](examples/tip-splitter/) | Python CLI + pytest | [README.md](examples/tip-splitter/README.md) | 23 facts checked, 0 errors |
 | [`habit-streak`](examples/habit-streak/) | Node.js + `node --test` | [README.md](examples/habit-streak/README.md) | 18 facts checked, 0 errors |
 | [`csv-dedupe`](examples/csv-dedupe/) | Python CLI, with launch video | [README.md](examples/csv-dedupe/README.md) | 23 facts checked, 0 errors ([case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study)) |
-| this repo | Python package, 54 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
+| this repo | Python package, 68 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
 
 See [examples/README.md](examples/README.md) for what each generated file is and how to run them.
 
@@ -117,13 +117,26 @@ pip install -e ".[dev]" && pytest
 | **ChatGPT / OpenAI API** | Function-calling schemas and a Custom GPT OpenAPI spec | [GPT guide](integrations/gpt/README.md) |
 | **Python** | `PipelineRunner(repo_path=".").run_all()` | [runner.py](src/agentic_readme/core/runner.py) |
 
+## LangGraph, LangChain, and LangSmith
+
+Optional, with `pip install -e ".[langchain]"`. The default pipeline makes no model calls, and nothing here changes that.
+
+| Library | What it adds | Try it |
+| :--- | :--- | :--- |
+| **LangGraph** | The pipeline as a state graph. With `--review` the run pauses after grounding while you edit `story.yaml`, and verify ⇄ fix runs as a loop. | `agentic-readme graph . --review` |
+| **LangChain** | The five tools as LangChain tools, a Claude agent that calls them, and an optional chain that rewrites the story's prose. A rewrite that adds a number missing from `facts.json` is rejected. | `agentic-readme agent "audit README.md"` |
+| **LangSmith** | A trace for every run, node, and phase, plus an evaluation that scores the graph on the committed examples | `LANGSMITH_TRACING=true agentic-readme graph .`, then `agentic-readme eval` |
+
+Setup, environment variables, and the graph diagram: [docs/LANGCHAIN.md](docs/LANGCHAIN.md).
+
 ## What this project demonstrates
 
 For reviewers who want the engineering summary:
 
 - **A staged agent pipeline with a human checkpoint.** Grounding writes locked contracts that the producers can only read, and a verifier loop audits the output ([ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 - **Verification rather than generation.** A claim auditor cross-checks the README, diagrams, and video storyboard against a facts ledger, with deterministic auto-fixes ([`verify/`](src/agentic_readme/verify/)).
-- **Tested.** 54 pytest tests cover grounding, production, auditing, rendering rules, and an end-to-end pipeline run ([`tests/`](tests/)).
+- **Tested.** 68 pytest tests cover grounding, production, auditing, rendering rules, the LangGraph and LangChain layer, and an end-to-end pipeline run ([`tests/`](tests/)).
+- **LangGraph orchestration, traced in LangSmith.** The same phases run as a LangGraph graph with a real human-in-the-loop pause, and a LangSmith evaluation scores it on the examples ([LANGCHAIN.md](docs/LANGCHAIN.md)).
 - **Packaged three ways.** A Typer CLI, an MCP JSON-RPC server, and a Claude Code skill, plus OpenAI tool schemas ([`integrations/`](integrations/)).
 - **Uses its own output.** This README, its diagram, and its badges come from the tool's own run on this repo, and the [launch video](docs/LAUNCH_VIDEO.md) shows real output from the examples.
 
@@ -133,8 +146,8 @@ For reviewers who want the engineering summary:
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 54 passing tests verifying core system invariants. | `test_count: 54` | [`tests`](tests) | ✅ Verified |
-| 3908 lines of code in the project source. | `loc: 3908` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 68 passing tests verifying core system invariants. | `test_count: 68` | [`tests`](tests) | ✅ Verified |
+| 4562 lines of code in the project source. | `loc: 4562` | [`src/`](src/) | ✅ Verified |
 | Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 | Claude Code and Claude Agent SDK skill specification. | `skill: agentic-readme` | [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) | ✅ Verified |
 | Model Context Protocol (MCP) server configuration. | `protocol: 2024-11-05` | [`mcp.json`](integrations/mcp/mcp.json) | ✅ Verified |
@@ -147,13 +160,14 @@ For reviewers who want the engineering summary:
 | [INSTALL.md](docs/INSTALL.md) | Beginner, developer, AI-assistant, and Codespaces setup, plus CI and troubleshooting |
 | [examples/](examples/README.md) | Sample runs and the "catch a lie" walkthrough |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | The three phases, contracts, and agents |
+| [LANGCHAIN.md](docs/LANGCHAIN.md) | The optional LangGraph graph, LangChain tools and agent, and LangSmith tracing and evals |
 | [LAUNCH_VIDEO.md](docs/LAUNCH_VIDEO.md) | How the video was made, and the first-20-seconds README method |
 | [HOUSE_STYLE.md](docs/HOUSE_STYLE.md) | The README patterns the writer follows |
 | [EVALUATION.md](docs/EVALUATION.md) | The benchmark protocol for evaluating output quality |
 
 ## What's in this repo
 
-- `src/agentic_readme/` — the package, one folder per phase: `ground/`, `produce/`, `verify/`, plus `core/` (runner, models) and `rubrics/` (style rules)
+- `src/agentic_readme/` — the package, one folder per phase: `ground/`, `produce/`, `verify/`, plus `core/` (runner, models, tracing), `rubrics/` (style rules), and `orchestrate/` (LangGraph graph, LangChain tools and agent, LangSmith evals)
 - `tests/` — the pytest suite
 - `skills/agentic-readme/` — the Claude Code skill
 - `integrations/` — MCP config (`mcp/mcp.json`) and OpenAI / Custom GPT setup
@@ -174,4 +188,4 @@ Issues and pull requests are welcome. Run `pip install -e ".[dev]" && pytest` be
 - **No unverified claims.** Every figure is checked against executable outputs in facts.json.
 - **No staged runs.** The terminal output in the video and examples comes from real runs.
 - **No relative `<video>` tags,** because GitHub doesn't play them. The video is a GIF that links to the MP4.
-- **No LLM required.** The pipeline is deterministic Python, and assistants call it as a tool.
+- **No LLM required.** The pipeline is deterministic Python, and assistants call it as a tool. The Claude steps (`graph --polish`, `agent`) are opt-in, and every number they touch is still checked against `facts.json`.
