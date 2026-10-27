@@ -97,3 +97,9 @@ Runs up to 2 verification passes:
   - Eliminates inflated marketing adjectives ("revolutionary", "agonizing uncertainty", "seamlessly").
   - Strips generic template greetings ("Welcome to ... 👋").
 - **PR Output**: Verified markdown and media assets bundled ready for pull request review.
+
+---
+
+## Optional: LangGraph, LangChain, and LangSmith
+
+The same three phases also run as a LangGraph `StateGraph` (`src/agentic_readme/orchestrate/graph.py`): `ground → [polish] → human_gate → produce → verify ⇄ fix`. The Human Gate becomes a real pause (`interrupt()` with a checkpointer), and the Evaluator-Optimizer loop becomes a cycle between the `verify` and `fix` nodes. LangChain provides the tools, a Claude agent, and an optional prose-polish chain that is rejected if it adds a number not in `facts.json`. LangSmith traces each node and phase and evaluates the graph against `examples/`. See [LANGCHAIN.md](LANGCHAIN.md).

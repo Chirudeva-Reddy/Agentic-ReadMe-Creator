@@ -17,6 +17,7 @@ from agentic_readme.core.models import (
     StorySpec,
     VerificationReport,
 )
+from agentic_readme.core.tracing import traceable
 from agentic_readme.verify.claim_auditor import ClaimAuditor
 from agentic_readme.verify.render_checker import RenderChecker
 from agentic_readme.verify.voice_editor import VoiceEditor
@@ -38,14 +39,8 @@ class EvaluatorOptimizer:
         story: StorySpec,
         max_rounds: int = 2,
     ) -> Tuple[VerificationReport, bool]:
-        report = VerificationReport()
-
         for round_idx in range(1, max_rounds + 1):
-            # Run all 3 evaluators
-            current_report = VerificationReport()
-            self.auditor.audit(readme_path, story, current_report)
-            self.render_checker.check(readme_path, current_report)
-            self.voice_editor.check(readme_path, current_report)
+            current_report = self.evaluate(readme_path, story)
 
             # If clean or only minor warnings, we're done
             if current_report.fatal_count == 0 and current_report.warning_count == 0:
@@ -56,11 +51,21 @@ class EvaluatorOptimizer:
                 return current_report, (current_report.fatal_count == 0)
 
             # Apply automatic optimizer fixes to readme_path
-            self._apply_auto_fixes(readme_path, current_report)
+            self.apply_fixes(readme_path, current_report)
 
         return current_report, (current_report.fatal_count == 0)
 
-    def _apply_auto_fixes(self, readme_path: Path, report: VerificationReport) -> None:
+    @traceable(name="evaluate")
+    def evaluate(self, readme_path: Path, story: Optional[StorySpec]) -> VerificationReport:
+        """One evaluation pass: Claim Auditor, Render Checker, then Voice Editor."""
+        report = VerificationReport()
+        self.auditor.audit(readme_path, story, report)
+        self.render_checker.check(readme_path, report)
+        self.voice_editor.check(readme_path, report)
+        return report
+
+    @traceable(name="apply_fixes")
+    def apply_fixes(self, readme_path: Path, report: VerificationReport) -> None:
         """Apply deterministic fixes for common drift and render issues."""
         text = readme_path.read_text(encoding="utf-8", errors="ignore")
 

@@ -9,6 +9,7 @@ Two things live here:
 | :--- | :--- |
 | [INSTALL.md](INSTALL.md) | Beginner, developer, AI-assistant, and Codespaces setup, plus CI and troubleshooting |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The three phases, contracts, and agents |
+| [LANGCHAIN.md](LANGCHAIN.md) | The optional LangGraph graph, LangChain tools and agent, and LangSmith tracing and evals |
 | [LAUNCH_VIDEO.md](LAUNCH_VIDEO.md) | How the video was made, and the first-20-seconds README method |
 | [HOUSE_STYLE.md](HOUSE_STYLE.md) | The README patterns the writer follows |
 | [EVALUATION.md](EVALUATION.md) | The benchmark protocol for evaluating output quality |

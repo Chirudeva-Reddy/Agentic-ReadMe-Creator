@@ -108,6 +108,11 @@ pytest
 | `agentic-readme run <repo>` | `ground` → `produce` → `verify` in one go | Yes |
 | `agentic-readme audit README.md --facts .agentic-readme/facts.json` | Read-only check of any README against a ledger | No |
 | `agentic-readme mcp` | Starts the MCP stdio server | No |
+| `agentic-readme graph <repo> [--review] [--polish]` | The same pipeline as a LangGraph graph; `--review` pauses after grounding so you can edit `story.yaml` | Yes, like `run` |
+| `agentic-readme agent "..."` | A Claude agent (LangChain) that calls the tools above; needs `ANTHROPIC_API_KEY` | Depends on the tool it calls |
+| `agentic-readme eval [--langsmith]` | Runs the graph on temporary copies of `examples/` and scores the results | No |
+
+`graph`, `agent`, and `eval` need the LangChain extra: `pip install -e ".[langchain]"` from a clone. See [LANGCHAIN.md](LANGCHAIN.md).
 
 The recommended loop is `ground`, then review `.agentic-readme/story.yaml` (especially `hook:`, which is the first line people read), then `produce`, then `verify`.
 

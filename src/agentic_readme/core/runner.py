@@ -21,6 +21,7 @@ from agentic_readme.core.models import (
     StorySpec,
     VerificationReport,
 )
+from agentic_readme.core.tracing import traceable
 from agentic_readme.ground.repo_analyst import RepoAnalyst
 from agentic_readme.ground.story_builder import StoryBuilder, refresh_story
 from agentic_readme.produce.demo_agent import DemoAgent
@@ -56,6 +57,7 @@ class PipelineRunner:
         self.output_dir = Path(output_dir or self.repo_path).resolve()
         self.console = console or Console(stderr=True)
 
+    @traceable(name="phase_0_ground")
     def phase_0_ground(self, target_audience: Optional[str] = None, custom_hook: Optional[str] = None) -> Tuple[StorySpec, FactsLedger]:
         """Phase 0: Ground repo facts and narrative into immutable contracts."""
         self.console.print(f"[bold cyan][Phase 0: GROUND][/bold cyan] Analyzing repository at {self.repo_path}...")
@@ -85,6 +87,7 @@ class PipelineRunner:
 
         return story, ledger
 
+    @traceable(name="phase_1_produce")
     def phase_1_produce(self, story: StorySpec, ledger: FactsLedger) -> Dict[str, Any]:
         """Phase 1: Fan-out producers reading immutable story and facts."""
         self.console.print(f"[bold cyan][Phase 1: PRODUCE][/bold cyan] Generating assets from locked story & facts...")
@@ -116,6 +119,7 @@ class PipelineRunner:
             "readme": readme_path,
         }
 
+    @traceable(name="phase_2_verify")
     def phase_2_verify(self, story: Optional[StorySpec], ledger: FactsLedger) -> Tuple[VerificationReport, bool]:
         """Phase 2: Evaluator-Optimizer loop verifying cross-asset facts and rendering."""
         self.console.print(f"[bold cyan][Phase 2: VERIFY][/bold cyan] Running cross-asset verification & claim auditing...")
@@ -144,6 +148,7 @@ class PipelineRunner:
 
         return report, passed
 
+    @traceable(name="run_all")
     def run_all(self, auto_approve_gate: bool = True) -> Dict[str, Any]:
         """Full pipeline execution with Human Gate."""
         # Phase 0
