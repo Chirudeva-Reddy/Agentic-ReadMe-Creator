@@ -10,15 +10,15 @@ solution: 'Agentic-ReadMe-Creator: A verified, media-rich README pipeline ground
   in real project runs. Every badge and number on this page is checked against facts.json,
   produced from the project''s own code and test runs.'
 key_claims:
-- claim: Automated test suite with 54 passing tests verifying core system invariants.
+- claim: Automated test suite with 74 passing tests verifying core system invariants.
   evidence_file: tests
   metrics:
-    test_count: 54
+    test_count: 74
   verified: true
-- claim: 3908 lines of code in the project source.
+- claim: 3491 lines of code in the project source.
   evidence_file: src/
   metrics:
-    loc: 3908
+    loc: 3491
   verified: true
 - claim: Open source distribution under the MIT license.
   evidence_file: LICENSE
@@ -46,6 +46,11 @@ architecture_nodes:
   role: entrypoint
   source_file: src/agentic_readme/cli.py
   technologies: []
+- id: agent
+  label: 'Agent: LangGraph'
+  role: pipeline_stage
+  source_file: src/agentic_readme/agent
+  technologies: []
 - id: ground
   label: 'Ground: facts.json'
   role: pipeline_stage
@@ -58,7 +63,7 @@ architecture_nodes:
   technologies: []
 - id: verify
   label: 'Verify: claim audit'
-  role: pipeline_stage
+  role: guardrail
   source_file: src/agentic_readme/verify
   technologies: []
 quickstart_commands:

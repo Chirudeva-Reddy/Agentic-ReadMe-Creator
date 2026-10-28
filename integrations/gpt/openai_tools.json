@@ -90,7 +90,7 @@
           },
           "auto_approve": {
             "type": "boolean",
-            "description": "Automatically approve Phase 0 contract gate (default: true)"
+            "description": "Skip the review gate (default: true). false stops after grounding so you can review story.yaml before producing."
           }
         }
       }

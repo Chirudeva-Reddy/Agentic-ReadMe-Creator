@@ -19,6 +19,8 @@ assets/video/src/build.sh
 
 Set `POSTER=0180` (a frame number at 30fps) to choose a different poster frame, and `OUT=dir` to write somewhere else.
 
+> **Note on wording.** The video was recorded before the refactor that renamed the printed labels. Its terminal shows the output of that version (`✔ Diagram Agent: …`). The same run now prints `✔ Diagrams: …`, `✔ Demo: …`, `✔ Video storyboard: …` and `✔ README: …`. The steps and the numbers are unchanged.
+
 ## The storyline
 
 Nobody who opens a repo cares how it's built until they know what it does for them. So the video opens with the problem, not the architecture:

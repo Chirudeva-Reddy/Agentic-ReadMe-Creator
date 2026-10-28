@@ -1,45 +1,62 @@
-# Evaluation & Benchmark Protocol
+# Evaluation
 
-To rigorously evaluate **Agentic ReadMe Creator** as an academic or portfolio benchmark, we use the following experimental setup.
-
----
-
-## 1. Test Dataset (~20 Repositories)
-
-- **Gold Standard References (5)**:
-  - `duet`: CLI / multi-agent evaluation tool.
-  - `body2health`: Fullstack ML and health metrics platform.
-  - `odoo-salon-erp`: Dockerized ERP suite.
-  - `ClaimLens`: Computer vision total-loss insurance triage pipeline.
-  - `NLP-Proj`: Hallucination detection and NLP evaluation suite.
-- **External Open Source Projects (15)**:
-  - Diverse repositories across Python, TypeScript, Rust, and Go covering CLI tools, web APIs, data pipelines, and ML models.
+How we measure whether the agent writes good, true READMEs. The first part runs today. The second is the broader benchmark protocol it grows into.
 
 ---
 
-## 2. Core Evaluation Metrics
+## What runs today: `agentic-readme eval`
 
-1. **Claim Accuracy (% Grounded)**:
-   - Percentage of numeric claims, badge statistics, and versions in the generated README that resolve to an exact key in `facts.json`.
-   - **Target**: 100%. Seeded fact drifts (e.g. 52 vs 44 tests) must be caught deterministically.
-2. **Render Validity (Broken Asset Rate)**:
-   - Must achieve **0 broken assets** under GitHub Markdown rendering rules.
-   - 0 repo-relative `<video>` tags.
-   - 0 oversized hero GIFs (> 5MB).
-   - 100% alt-text coverage.
-3. **The 5-Second Test**:
-   - Human peer review: Can an evaluator explain what the project does within 5 seconds of viewing the above-the-fold README section?
-4. **Rubric LLM-Judge Score (1–5 Scale)**:
-   - Independent judge scoring clarity, pain framing, groundedness, and lack of AI marketing fluff.
-5. **Human Edit Distance on PR**:
-   - Levenshtein character edit distance and token diff between generated PR README and human-accepted version.
+```bash
+export ANTHROPIC_API_KEY=... LANGSMITH_API_KEY=...
+```
+
+```bash
+agentic-readme eval                              # default model
+```
+
+```bash
+agentic-readme eval --model anthropic:claude-sonnet-5-5   # compare another model
+```
+
+What it does (`src/agentic_readme/agent/evaluate.py`):
+
+1. Creates the LangSmith dataset `agentic-readme-examples` if it doesn't exist, with one row per project in `examples/`.
+2. For each row, copies the project to a temp folder and deletes its `README.md` and `story.yaml`, so the agent starts from nothing. Then it runs the full agent: ground, tool loop, final check.
+3. Scores the run with **deterministic graders**, so no LLM judges another LLM:
+
+| Grader | Measures | Good value |
+| :--- | :--- | :--- |
+| `verify_passed` | Did the agent's final check pass? | `true` |
+| `fatal_findings` | Fatal findings in a fresh, read-only audit of the finished README | `0` |
+| `checks_used` | How many final checks the agent needed | `1` |
+| `story_numbers_grounded` | Is every number in the hook, problem, solution and audience also in `facts.json`? | `true` |
+
+Each run appears in LangSmith as one experiment, named after the model. Every row links to its full trace: each LLM call, tool call and tool result. Comparing two experiments shows which model or prompt change helped, row by row.
+
+The graders and the eval target are tested offline with a scripted model in `tests/test_agent.py`.
 
 ---
 
-## 3. Ablation Studies
+## Broader benchmark protocol (planned)
 
-| Ablation Configuration | Hypothesis Tested |
+### Test set (~20 repositories)
+
+- **Reference READMEs (5)**: `duet` (CLI evaluation tool), `body2health` (full-stack health metrics), `odoo-salon-erp` (Dockerized ERP), `ClaimLens` (computer-vision insurance triage), `NLP-Proj` (hallucination detection).
+- **External open-source projects (15)** across Python, TypeScript, Rust and Go: CLI tools, web APIs, data pipelines and ML models.
+
+### Metrics
+
+1. **Claim accuracy (% grounded).** The share of numbers, badge values and versions in the README that match an exact key in `facts.json`. Target: 100%. Seeded drifts (e.g. 52 vs 44 tests) must be caught every time.
+2. **Render validity.** 0 broken assets under GitHub's rules: no repo-relative `<video>` tags, no hero GIF over 5 MB, alt text on every image.
+3. **The 5-second test.** Can a reviewer say what the project does within 5 seconds of seeing the top of the README?
+4. **Rubric judge score (1–5).** An LLM judge, kept separate from the deterministic graders, scores clarity, problem framing, groundedness and absence of marketing fluff.
+5. **Human edit distance.** How much a maintainer changes the generated README before accepting it.
+
+### Ablations
+
+| Configuration | Question it answers |
 | :--- | :--- |
-| **Full Pipeline vs. Single-Agent Single-Pass** | Measures whether multi-agent separation of grounding, production, and verification yields higher accuracy than monolithic prompting. |
-| **Pipeline With vs. Without Claim Auditor** | Isolates the impact of the Claim Auditor in preventing fact drift and catching leaked development jargon. |
-| **With vs. Without Locked Story Spec** | Tests Cognition's finding on conflicting decisions: proves that parallel producers drift in pitch and numbers unless constrained by an immutable contract. |
+| Agent vs. deterministic `run` (no LLM) | How much does the LLM's rewrite of the story improve the 5-second test and judge score? |
+| With vs. without the `final_check` edge | How often does the agent stop with a README that fails verify? |
+| With vs. without the number guardrail in the tools | How often does the model try to write numbers that aren't in `facts.json`? |
+| With vs. without the locked `facts.json` | Do the README, diagram and video storyboard drift apart without one shared source of numbers? |

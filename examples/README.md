@@ -61,8 +61,8 @@ The point of the tool is that a README can't claim something the code doesn't ba
 3. You get this, and the command exits with code 1 (so CI fails too):
 
    ```text
-   fact_drift │ Fatal Functional Bug │ Test count badge drift: badge claims 40 tests passed, but facts ledger records 3.
-   fact_drift │ Fatal Functional Bug │ License badge discrepancy: badge states Apache, actual LICENSE file is MIT.
+   fact_drift │ fatal │ Test count badge drift: badge claims 40 tests passed, but facts ledger records 3.
+   fact_drift │ fatal │ License badge discrepancy: badge states Apache, actual LICENSE file is MIT.
    Summary: 23 facts checked. 2 fatal errors, 0 warnings.
    ```
 

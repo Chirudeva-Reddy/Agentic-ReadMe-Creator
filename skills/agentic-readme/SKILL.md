@@ -10,6 +10,10 @@ description: |
 
 This skill provides an automated, compiler-like pipeline to ground, produce, and verify repository documentation against executable facts.
 
+**You are the agent.** The `agentic-readme` commands are deterministic tools: they measure the repo, write files from `story.yaml` + `facts.json`, and check the result. Your job is the judgment: rewrite the story's words, decide what to fix, and loop until verify passes. Never invent a number. Every number must come from `facts.json`, and `verify` fails on any that doesn't match.
+
+(The package also ships its own LangGraph agent, `agentic-readme agent <REPO_PATH>`, which does the same loop with the Claude API. Inside Claude Code, drive the tools yourself as described below.)
+
 ## When to use this skill
 
 Activate this skill when:
@@ -77,11 +81,18 @@ agentic-readme produce <REPO_PATH>
 
 ### Phase 2: Verify (Evaluator-Optimizer Loop)
 
-Audit generated assets across Claim Auditor, Render Checker, and Voice Editor:
+Check the README and assets against `facts.json`: claims and numbers, GitHub rendering rules, and wording. Verify auto-fixes anything with one right answer, such as a wrong badge number:
 
 ```bash
 agentic-readme verify <REPO_PATH>
 ```
+
+**If it exits 1, loop:** read each finding (the table lists the problem and its location), fix the cause, and run `verify` again. Repeat up to 3 times.
+- Wording findings: fix the words in `story.yaml` and re-run `produce`, or edit `README.md` directly if `produce` won't run again.
+- A number that's wrong because the code changed: re-run `ground` (it refreshes numbers and keeps your edits), then `produce`.
+- Never edit `facts.json` by hand, and never change a number just to make the check pass.
+
+If it still fails after 3 rounds, stop and show the user the remaining findings.
 
 To run a standalone audit on an existing README:
 
