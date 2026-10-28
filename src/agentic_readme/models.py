@@ -182,6 +182,15 @@ class VerificationReport(BaseModel):
     def minor_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == FindingSeverity.MINOR)
 
+    def finding_lines(self) -> list[str]:
+        """Each finding as text, followed by how to fix it (for an agent or a log)."""
+        lines = []
+        for f in self.findings:
+            lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
+            if f.suggested_fix:
+                lines.append(f"  Fix: {f.suggested_fix}")
+        return lines
+
     def add_finding(
         self,
         category: FindingCategory,

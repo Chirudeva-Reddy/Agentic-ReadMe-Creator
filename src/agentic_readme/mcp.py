@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from agentic_readme import __version__, pipeline
-from agentic_readme.models import FactsLedger, VerificationReport
+from agentic_readme.models import FactsLedger
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {"name": "agentic-readme", "version": __version__}
@@ -123,16 +123,6 @@ def _result(text: str, is_error: bool = False) -> dict[str, Any]:
     return {"isError": is_error, "content": [{"type": "text", "text": text}]}
 
 
-def _finding_lines(report: VerificationReport) -> list[str]:
-    """One line per finding, plus how to fix it, so the calling agent can act on it."""
-    lines = []
-    for f in report.findings:
-        lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
-        if f.suggested_fix:
-            lines.append(f"  Fix: {f.suggested_fix}")
-    return lines
-
-
 def _audit(args: dict) -> dict:
     readme = Path(args.get("readme_path", "README.md"))
     facts_file = Path(args.get("facts_file") or pipeline.contract_path(readme.parent, "facts.json"))
@@ -149,7 +139,7 @@ def _audit(args: dict) -> dict:
         f"Warnings: {report.warning_count}",
     ]
     if report.findings:
-        lines += ["\nFindings:"] + _finding_lines(report)
+        lines += ["\nFindings:"] + report.finding_lines()
     return _result("\n".join(lines), is_error=not report.passed)
 
 
@@ -196,7 +186,7 @@ def _verify(args: dict) -> dict:
         f"{report.fatal_count} fatal findings, {report.warning_count} warnings.",
     ]
     if report.findings:
-        lines += ["\nFindings:"] + _finding_lines(report)
+        lines += ["\nFindings:"] + report.finding_lines()
     return _result("\n".join(lines), is_error=not passed)
 
 
@@ -220,7 +210,7 @@ def _run(args: dict) -> dict:
         f"- Verification: {report.facts_checked} facts checked, {report.fatal_count} fatal errors, {report.warning_count} warnings",
     ]
     if report.findings:
-        lines += ["\nVerification Findings:"] + _finding_lines(report)
+        lines += ["\nVerification Findings:"] + report.finding_lines()
     return _result("\n".join(lines), is_error=not result["passed"])
 
 

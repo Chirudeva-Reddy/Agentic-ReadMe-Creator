@@ -7,7 +7,12 @@ Each command is a thin wrapper around one function in pipeline.py:
     verify   -> pipeline.verify     check, auto-fix, check again; exit 1 on fatal findings
     audit    -> pipeline.check      read-only check of any README; exit 1 on fatal findings
     run      -> pipeline.run        all three steps
+    agent    -> agent.graph         an LLM improves the story, using the steps above as tools
+    eval     -> agent.evaluate      score the agent on examples/ in LangSmith
     mcp      -> mcp.run_mcp_server  the same tools for AI assistants (JSON-RPC over stdio)
+
+The agent and eval imports live inside their commands, so the other commands (and CI)
+start fast and never need an API key.
 
 Typer turns each decorated function into a sub-command and its arguments into options.
 """
@@ -15,6 +20,8 @@ Typer turns each decorated function into a sub-command and its arguments into op
 from __future__ import annotations
 
 from pathlib import Path
+
+import os
 
 import typer
 from rich.console import Console
@@ -114,6 +121,61 @@ def run(
     _show(report)
     if not passed:
         raise typer.Exit(code=1)
+
+
+@app.command()
+def agent(
+    repo_path: Path = typer.Argument(Path("."), help="Path to repository"),
+    model: str | None = typer.Option(None, "--model", "-m", help="provider:model (default: $AGENTIC_README_MODEL or anthropic:claude-opus-5-5)"),
+    review: bool = typer.Option(False, "--review", help="Pause before the README is written so you can approve the story"),
+    max_checks: int = typer.Option(3, "--max-checks", help="How many times the final check may send the agent back"),
+):
+    """Let the LLM agent write and verify the README, using the pipeline as its tools."""
+    from agentic_readme.agent.graph import DEFAULT_MODEL, describe_step, run_agent
+
+    model = model or os.environ.get("AGENTIC_README_MODEL", DEFAULT_MODEL)
+    if model.startswith("anthropic:") and not os.environ.get("ANTHROPIC_API_KEY"):
+        console.print("[red]Error: set ANTHROPIC_API_KEY to run the agent.[/red] "
+                      "`agentic-readme run` does the same job without an LLM.")
+        raise typer.Exit(code=1)
+    console.print(f"Agent: {model}. {_tracing_status()}")
+
+    def ask_human(question: dict) -> str:
+        console.print(question["story"], markup=False)
+        return typer.prompt(question["question"])
+
+    def print_step(update: dict) -> None:
+        for line in describe_step(update):
+            console.print(line, markup=False)
+
+    result = run_agent(repo_path, model, review, max_checks, ask_human=ask_human, on_step=print_step)
+    verdict = "[green]PASSED[/green]" if result["passed"] else "[red]FAILED[/red]"
+    console.print(f"Agent finished: {verdict} after {len(result['tool_calls'])} tool calls and {result['checks']} final check(s).")
+    if not result["passed"]:
+        raise typer.Exit(code=1)
+
+
+@app.command(name="eval")
+def evaluate(
+    examples_dir: Path = typer.Option(Path("examples"), "--examples", help="Folder of example projects"),
+    model: str | None = typer.Option(None, "--model", "-m", help="provider:model to evaluate"),
+):
+    """Score the agent on every example project, as a LangSmith experiment."""
+    if not os.environ.get("LANGSMITH_API_KEY"):
+        console.print("[red]Error: set LANGSMITH_API_KEY to record the experiment in LangSmith.[/red]")
+        raise typer.Exit(code=1)
+    from agentic_readme.agent.evaluate import run_eval
+
+    os.environ.setdefault("LANGSMITH_PROJECT", "agentic-readme")
+    result = run_eval(examples_dir, model)
+    console.print(f"Experiment [bold]{result['experiment']}[/bold] recorded: {result['url']}")
+
+
+def _tracing_status() -> str:
+    if os.environ.get("LANGSMITH_TRACING", "").lower() == "true" and os.environ.get("LANGSMITH_API_KEY"):
+        os.environ.setdefault("LANGSMITH_PROJECT", "agentic-readme")
+        return f"LangSmith tracing on (project: {os.environ['LANGSMITH_PROJECT']})."
+    return "LangSmith tracing off (set LANGSMITH_TRACING=true and LANGSMITH_API_KEY to trace every step)."
 
 
 @app.command()
