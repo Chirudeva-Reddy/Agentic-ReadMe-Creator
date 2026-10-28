@@ -21,7 +21,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agentic_readme import pipeline
-from agentic_readme.models import FactsLedger, VerificationReport
+from agentic_readme.models import FactsLedger, FindingSeverity, VerificationReport
 
 app = typer.Typer(
     name="agentic-readme",
@@ -118,7 +118,7 @@ def _show(report: VerificationReport) -> None:
     table.add_column("Location", style="white")
 
     for f in report.findings:
-        color = "red" if "Fatal" in f.severity else "yellow"
+        color = "red" if f.severity == FindingSeverity.FATAL else "yellow"
         table.add_row(f.category.value, f"[{color}]{f.severity.value}[/{color}]", f.message, f.location or "—")
 
     console.print(table)

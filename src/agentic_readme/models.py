@@ -138,9 +138,9 @@ class StorySpec(BaseModel):
 # --- verification results --------------------------------------------------------------
 
 class FindingSeverity(str, Enum):
-    FATAL = "Fatal Functional Bug"      # fails the run
-    WARNING = "Shallow Verification"    # reported, and verify tries to auto-fix it
-    MINOR = "Minor Robustness Risk"     # reported only
+    FATAL = "fatal"      # fails the run
+    WARNING = "warning"  # reported, and verify tries to auto-fix it
+    MINOR = "minor"      # reported only
 
 
 class FindingCategory(str, Enum):

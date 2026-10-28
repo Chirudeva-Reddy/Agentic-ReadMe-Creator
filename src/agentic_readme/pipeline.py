@@ -95,13 +95,13 @@ def produce(story: StorySpec, facts: FactsLedger, output_dir: Path) -> dict:
     console.print("[bold cyan][Phase 1: PRODUCE][/bold cyan] Generating assets from locked story & facts...")
 
     diagrams = draw_diagrams(story, out)
-    console.print("  [green]✔ Diagram Agent:[/green] generated .excalidraw + light/dark SVGs")
+    console.print("  [green]✔ Diagrams:[/green] .excalidraw + light, dark and static SVGs")
     demo = make_demo(story, out)
-    console.print("  [green]✔ Demo Agent:[/green] generated VHS script + hero asset")
+    console.print("  [green]✔ Demo:[/green] VHS script + illustrated terminal preview")
     video = make_storyboard(story, facts, out)
-    console.print("  [green]✔ Video Agent:[/green] generated /brag 20s spec + scene table")
+    console.print("  [green]✔ Video storyboard:[/green] /brag 20s spec + scene table")
     readme = write_readme(story, facts, out)
-    console.print("  [green]✔ Writer Agent:[/green] generated candidate README.md")
+    console.print("  [green]✔ README:[/green] candidate README.md")
 
     return {"diagrams": diagrams, "demo": demo, "video": video, "readme": readme}
 
