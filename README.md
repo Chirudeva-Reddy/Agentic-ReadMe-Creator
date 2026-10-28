@@ -7,7 +7,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
   <a href="pyproject.toml"><img alt="python >=3.11" src="https://img.shields.io/badge/python->=3.11-3776AB?style=flat-square"></a>
-  <a href="tests/"><img alt="tests 74 passed" src="https://img.shields.io/badge/tests-74%20passed-success?style=flat-square"></a>
+  <a href="tests/"><img alt="tests 75 passed" src="https://img.shields.io/badge/tests-75%20passed-success?style=flat-square"></a>
   <a href="skills/agentic-readme/SKILL.md"><img alt="claude skill ready" src="https://img.shields.io/badge/claude%20skill-ready-blueviolet?style=flat-square"></a>
   <a href="integrations/mcp/mcp.json"><img alt="mcp protocol 2024-11-05" src="https://img.shields.io/badge/mcp-2024--11--05-emerald?style=flat-square"></a>
 </p>
@@ -83,7 +83,7 @@ Real runs, with the output committed. Nothing was edited by hand.
 | [`tip-splitter`](examples/tip-splitter/) | Python CLI + pytest | [README.md](examples/tip-splitter/README.md) | 23 facts checked, 0 errors |
 | [`habit-streak`](examples/habit-streak/) | Node.js + `node --test` | [README.md](examples/habit-streak/README.md) | 18 facts checked, 0 errors |
 | [`csv-dedupe`](examples/csv-dedupe/) | Python CLI, with launch video | [README.md](examples/csv-dedupe/README.md) | 23 facts checked, 0 errors ([case study](https://chirudeva-reddy.github.io/Agentic-ReadMe-Creator/#case-study)) |
-| this repo | Python package, 74 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
+| this repo | Python package, 75 tests | the page you're reading | see [Evidence](#evidence--ground-truth) |
 
 See [examples/README.md](examples/README.md) for what each generated file is and how to run them.
 
@@ -134,7 +134,7 @@ For reviewers who want the engineering summary:
 - **Human-in-the-loop.** `--review` pauses the graph with LangGraph `interrupt()` and resumes from a checkpoint with your answer.
 - **Observable and evaluated.** Every node, LLM call and tool call is traced in LangSmith, and `agentic-readme eval` scores the agent on the examples with deterministic graders ([EVALUATION.md](docs/EVALUATION.md)).
 - **Verification rather than generation.** A claim auditor cross-checks the README, diagrams, and video storyboard against a facts ledger, with deterministic auto-fixes ([`verify/`](src/agentic_readme/verify/)).
-- **Tested.** 74 pytest tests cover grounding, production, auditing, rendering rules, the agent graph (driven by a scripted model), and byte-identical regeneration of every example ([`tests/`](tests/)).
+- **Tested.** 75 pytest tests cover grounding, production, auditing, rendering rules, the agent graph (driven by a scripted model), and byte-identical regeneration of every example ([`tests/`](tests/)).
 - **Packaged three ways.** A Typer CLI, an MCP JSON-RPC server, and a Claude Code skill, plus OpenAI tool schemas ([`integrations/`](integrations/)).
 - **Uses its own output.** This README, its diagram, and its badges come from the tool's own run on this repo, and the [launch video](docs/LAUNCH_VIDEO.md) shows real output from the examples.
 
@@ -144,8 +144,8 @@ For reviewers who want the engineering summary:
 
 | Claim | Verified Metric | Source Evidence | Status |
 | :--- | :--- | :--- | :--- |
-| Automated test suite with 74 passing tests verifying core system invariants. | `test_count: 74` | [`tests`](tests) | ✅ Verified |
-| 3491 lines of code in the project source. | `loc: 3491` | [`src/`](src/) | ✅ Verified |
+| Automated test suite with 75 passing tests verifying core system invariants. | `test_count: 75` | [`tests`](tests) | ✅ Verified |
+| 3503 lines of code in the project source. | `loc: 3503` | [`src/`](src/) | ✅ Verified |
 | Open source distribution under the MIT license. | `license: MIT` | [`LICENSE`](LICENSE) | ✅ Verified |
 | Claude Code and Claude Agent SDK skill specification. | `skill: agentic-readme` | [`skills/agentic-readme/SKILL.md`](skills/agentic-readme/SKILL.md) | ✅ Verified |
 | Model Context Protocol (MCP) server configuration. | `protocol: 2024-11-05` | [`mcp.json`](integrations/mcp/mcp.json) | ✅ Verified |
