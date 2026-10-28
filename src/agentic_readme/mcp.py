@@ -1,7 +1,13 @@
-"""Model Context Protocol (MCP) server for Agentic ReadMe Creator.
+"""The front door for AI assistants: a Model Context Protocol (MCP) server.
 
-Implements JSON-RPC 2.0 stdio transport (protocol version 2024-11-05) for seamless
-integration with Claude Desktop, Claude Code, Cursor, ChatGPT, and MCP clients.
+An MCP client (Claude Desktop, Claude Code, Cursor, ...) starts `agentic-readme mcp` and
+talks to it over stdin/stdout, one JSON-RPC 2.0 message per line:
+
+    -> {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+    <- {"jsonrpc": "2.0", "id": 1, "result": {"tools": [...]}}
+
+The assistant is the agent here: it decides which tool to call, reads the result, and
+calls the next one. Each tool is a thin wrapper around a function in pipeline.py.
 """
 
 from __future__ import annotations
@@ -9,26 +15,16 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TextIO
+from typing import Any, TextIO
 
-from agentic_readme.core.models import (
-    FactsLedger,
-    FindingSeverity,
-    StorySpec,
-    VerificationReport,
-)
-from agentic_readme.core.runner import PipelineRunner, contract_path
-from agentic_readme.verify.claim_auditor import ClaimAuditor
-from agentic_readme.verify.render_checker import RenderChecker
-from agentic_readme.verify.voice_editor import VoiceEditor
+from agentic_readme import __version__, pipeline
+from agentic_readme.models import FactsLedger, VerificationReport
 
 PROTOCOL_VERSION = "2024-11-05"
-SERVER_INFO = {
-    "name": "agentic-readme",
-    "version": "0.1.0",
-}
+SERVER_INFO = {"name": "agentic-readme", "version": __version__}
 
-TOOLS: List[Dict[str, Any]] = [
+# What the assistant sees: each tool's name, what it does, and its arguments (JSON Schema).
+TOOLS: list[dict[str, Any]] = [
     {
         "name": "agentic_readme_audit",
         "description": "Mechanically audit a README against facts.json ground truth ledger to detect fact drift, broken badges, leaked internal jargon, and voice issues.",
@@ -120,238 +116,175 @@ TOOLS: List[Dict[str, Any]] = [
 ]
 
 
-def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """Execute a tool by name and return text content and error status."""
+# --- tools ---------------------------------------------------------------------------
+
+def _result(text: str, is_error: bool = False) -> dict[str, Any]:
+    """An MCP tool result: one block of text, and whether the call failed."""
+    return {"isError": is_error, "content": [{"type": "text", "text": text}]}
+
+
+def _finding_lines(report: VerificationReport) -> list[str]:
+    return [
+        f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})"
+        for f in report.findings
+    ]
+
+
+def _audit(args: dict) -> dict:
+    readme = Path(args.get("readme_path", "README.md"))
+    facts_file = Path(args.get("facts_file") or pipeline.contract_path(readme.parent, "facts.json"))
+    if not readme.exists():
+        return _result(f"Error: README file not found: {readme}", is_error=True)
+    if not facts_file.exists():
+        return _result(f"Error: Facts file not found: {facts_file}", is_error=True)
+
+    report = pipeline.check(readme, FactsLedger.load(facts_file))
+    lines = [
+        f"Audit Result: {'PASSED' if report.passed else 'FAILED'}",
+        f"Facts Checked: {report.facts_checked}",
+        f"Fatal Errors: {report.fatal_count}",
+        f"Warnings: {report.warning_count}",
+    ]
+    if report.findings:
+        lines += ["\nFindings:"] + _finding_lines(report)
+    return _result("\n".join(lines), is_error=not report.passed)
+
+
+def _ground(args: dict) -> dict:
+    repo = Path(args.get("repo_path", "."))
+    story, facts = pipeline.ground(repo, repo, args.get("audience"), args.get("hook"))
+    return _result(
+        f"Phase 0 Grounding Complete:\n"
+        f"- Repository: {story.repo_name}\n"
+        f"- Facts Extracted: {len(facts.facts)}\n"
+        f"- Contracts Generated: {pipeline.contract_path(repo, 'story.yaml')}, {pipeline.contract_path(repo, 'facts.json')}\n"
+        f"- Hook: {story.hook}"
+    )
+
+
+def _produce(args: dict) -> dict:
+    project_dir = Path(args.get("dir_path", "."))
+    story, facts = pipeline.load_contracts(project_dir)
+    if story is None or facts is None:
+        return _result(f"Error: story.yaml or facts.json missing in directory: {project_dir}", is_error=True)
+
+    assets = pipeline.produce(story, facts, project_dir)
+    diagrams = [str(p) for p in assets["diagrams"].values()]
+    demo = [str(assets["demo"]["tape_file"]), str(assets["demo"]["hero_asset"])]
+    video = [str(assets["video"]["spec_file"]), str(assets["video"]["scene_table"])]
+    return _result(
+        f"Phase 1 Production Complete:\n"
+        f"- Candidate README: {assets['readme']}\n"
+        f"- Diagrams: {diagrams}\n"
+        f"- Demo Assets: {demo}\n"
+        f"- Video Spec: {video}"
+    )
+
+
+def _verify(args: dict) -> dict:
+    project_dir = Path(args.get("dir_path", "."))
+    _story, facts = pipeline.load_contracts(project_dir)
+    if facts is None:
+        return _result(f"Error: facts.json missing in directory: {project_dir}", is_error=True)
+
+    report, passed = pipeline.verify(project_dir, facts)
+    lines = [
+        f"Phase 2 Verification {'PASSED' if passed else 'FAILED'}: {report.facts_checked} facts checked, "
+        f"{report.fatal_count} fatal findings, {report.warning_count} warnings.",
+    ]
+    if report.findings:
+        lines += ["\nFindings:"] + _finding_lines(report)
+    return _result("\n".join(lines), is_error=not passed)
+
+
+def _run(args: dict) -> dict:
+    repo = Path(args.get("repo_path", "."))
+    result = pipeline.run(repo, repo, args.get("auto_approve", True))
+    report = result["report"]
+    lines = [
+        f"Full Pipeline Execution {'PASSED' if result['passed'] else 'FAILED'}:",
+        f"- Repository: {result['story'].repo_name}",
+        f"- Facts Extracted: {len(result['facts'].facts)} facts recorded in facts.json",
+        f"- Media Assets: Candidate README, .excalidraw diagrams, VHS demo script, /brag video spec",
+        f"- Verification: {report.facts_checked} facts checked, {report.fatal_count} fatal errors, {report.warning_count} warnings",
+    ]
+    if report.findings:
+        lines += ["\nVerification Findings:"] + _finding_lines(report)
+    return _result("\n".join(lines), is_error=not result["passed"])
+
+
+HANDLERS = {
+    "agentic_readme_audit": _audit,
+    "agentic_readme_ground": _ground,
+    "agentic_readme_produce": _produce,
+    "agentic_readme_verify": _verify,
+    "agentic_readme_run": _run,
+}
+
+
+def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run one tool. Errors become an error result, so the server never crashes."""
+    handler = HANDLERS.get(name)
+    if handler is None:
+        return _result(f"Unknown tool: {name}", is_error=True)
     try:
-        if name == "agentic_readme_audit":
-            readme_path = Path(arguments.get("readme_path", "README.md"))
-            facts_file = Path(arguments.get("facts_file") or contract_path(readme_path.parent, "facts.json"))
-
-            if not readme_path.exists():
-                return {"isError": True, "content": [{"type": "text", "text": f"Error: README file not found: {readme_path}"}]}
-            if not facts_file.exists():
-                return {"isError": True, "content": [{"type": "text", "text": f"Error: Facts file not found: {facts_file}"}]}
-
-            ledger = FactsLedger.load(facts_file)
-            auditor = ClaimAuditor(ledger)
-            render_checker = RenderChecker(readme_path.parent)
-            voice_editor = VoiceEditor()
-
-            report = VerificationReport()
-            auditor.audit(readme_path, report=report)
-            render_checker.check(readme_path, report=report)
-            voice_editor.check(readme_path, report=report)
-
-            status = "PASSED" if report.passed else "FAILED"
-            summary_lines = [
-                f"Audit Result: {status}",
-                f"Facts Checked: {report.facts_checked}",
-                f"Fatal Errors: {report.fatal_count}",
-                f"Warnings: {report.warning_count}",
-            ]
-            if report.findings:
-                summary_lines.append("\nFindings:")
-                for f in report.findings:
-                    summary_lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
-
-            return {"isError": not report.passed, "content": [{"type": "text", "text": "\n".join(summary_lines)}]}
-
-        elif name == "agentic_readme_ground":
-            repo_path = Path(arguments.get("repo_path", "."))
-            audience = arguments.get("audience")
-            hook = arguments.get("hook")
-
-            runner = PipelineRunner(repo_path, output_dir=repo_path)
-            story, ledger = runner.phase_0_ground(target_audience=audience, custom_hook=hook)
-
-            out_text = (
-                f"Phase 0 Grounding Complete:\n"
-                f"- Repository: {story.repo_name}\n"
-                f"- Facts Extracted: {len(ledger.facts)}\n"
-                f"- Contracts Generated: {contract_path(repo_path, 'story.yaml')}, {contract_path(repo_path, 'facts.json')}\n"
-                f"- Hook: {story.hook}"
-            )
-            return {"isError": False, "content": [{"type": "text", "text": out_text}]}
-
-        elif name == "agentic_readme_produce":
-            dir_path = Path(arguments.get("dir_path", "."))
-            story_file = contract_path(dir_path, "story.yaml")
-            facts_file = contract_path(dir_path, "facts.json")
-
-            if not story_file.exists() or not facts_file.exists():
-                return {"isError": True, "content": [{"type": "text", "text": f"Error: story.yaml or facts.json missing in directory: {dir_path}"}]}
-
-            story = StorySpec.load_yaml(story_file)
-            ledger = FactsLedger.load(facts_file)
-            runner = PipelineRunner(dir_path, output_dir=dir_path)
-            assets = runner.phase_1_produce(story, ledger)
-
-            diagram_files = [str(p) for p in assets["diagrams"].values()]
-            demo_files = [str(assets["demo"]["tape_file"]), str(assets["demo"]["hero_asset"])]
-            video_files = [str(assets["video"]["spec_file"]), str(assets["video"]["scene_table"])]
-
-            out_text = (
-                f"Phase 1 Production Complete:\n"
-                f"- Candidate README: {assets['readme']}\n"
-                f"- Diagrams: {diagram_files}\n"
-                f"- Demo Assets: {demo_files}\n"
-                f"- Video Spec: {video_files}"
-            )
-            return {"isError": False, "content": [{"type": "text", "text": out_text}]}
-
-        elif name == "agentic_readme_verify":
-            dir_path = Path(arguments.get("dir_path", "."))
-            facts_file = contract_path(dir_path, "facts.json")
-            if not facts_file.exists():
-                return {"isError": True, "content": [{"type": "text", "text": f"Error: facts.json missing in directory: {dir_path}"}]}
-
-            story_file = contract_path(dir_path, "story.yaml")
-            story = StorySpec.load_yaml(story_file) if story_file.exists() else None
-            ledger = FactsLedger.load(facts_file)
-
-            runner = PipelineRunner(dir_path, output_dir=dir_path)
-            report, passed = runner.phase_2_verify(story, ledger)
-
-            status = "PASSED" if passed else "FAILED"
-            summary_lines = [
-                f"Phase 2 Verification {status}: {report.facts_checked} facts checked, {report.fatal_count} fatal findings, {report.warning_count} warnings.",
-            ]
-            if report.findings:
-                summary_lines.append("\nFindings:")
-                for f in report.findings:
-                    summary_lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
-
-            return {"isError": not passed, "content": [{"type": "text", "text": "\n".join(summary_lines)}]}
-
-        elif name == "agentic_readme_run":
-            repo_path = Path(arguments.get("repo_path", "."))
-            auto_approve = arguments.get("auto_approve", True)
-
-            runner = PipelineRunner(repo_path, output_dir=repo_path)
-            res = runner.run_all(auto_approve_gate=auto_approve)
-
-            report = res["verification_report"]
-            status = "PASSED" if res["passed"] else "FAILED"
-            summary_lines = [
-                f"Full Pipeline Execution {status}:",
-                f"- Repository: {res['story'].repo_name}",
-                f"- Facts Extracted: {len(res['facts'].facts)} facts recorded in facts.json",
-                f"- Media Assets: Candidate README, .excalidraw diagrams, VHS demo script, /brag video spec",
-                f"- Verification: {report.facts_checked} facts checked, {report.fatal_count} fatal errors, {report.warning_count} warnings",
-            ]
-            if report.findings:
-                summary_lines.append("\nVerification Findings:")
-                for f in report.findings:
-                    summary_lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
-
-            return {"isError": not res["passed"], "content": [{"type": "text", "text": "\n".join(summary_lines)}]}
-
-        else:
-            return {"isError": True, "content": [{"type": "text", "text": f"Unknown tool: {name}"}]}
-
+        return handler(arguments)
     except Exception as exc:
-        return {"isError": True, "content": [{"type": "text", "text": f"Tool execution failed: {exc}"}]}
+        return _result(f"Tool execution failed: {exc}", is_error=True)
 
 
-def handle_request(req: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Process a single JSON-RPC 2.0 request and return the JSON-RPC response."""
-    method = req.get("method")
-    req_id = req.get("id")
+# --- JSON-RPC ------------------------------------------------------------------------
 
-    # In JSON-RPC 2.0, notifications (no id member or id is None) MUST NOT receive a response
-    if req_id is None:
+def _reply(request_id: Any, result: dict) -> dict:
+    return {"jsonrpc": "2.0", "id": request_id, "result": result}
+
+
+def handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
+    """Answer one JSON-RPC request. Notifications (no id) get no answer, as the spec says."""
+    method = request.get("method")
+    request_id = request.get("id")
+    if request_id is None:
         return None
 
     if method == "initialize":
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "protocolVersion": PROTOCOL_VERSION,
-                "capabilities": {
-                    "tools": {},
-                },
-                "serverInfo": SERVER_INFO,
-            },
-        }
-
+        return _reply(request_id, {
+            "protocolVersion": PROTOCOL_VERSION,
+            "capabilities": {"tools": {}},
+            "serverInfo": SERVER_INFO,
+        })
     if method == "ping":
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {},
-        }
-
+        return _reply(request_id, {})
     if method == "tools/list":
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "tools": TOOLS,
-            },
-        }
-
+        return _reply(request_id, {"tools": TOOLS})
     if method == "tools/call":
-        params = req.get("params", {})
-        tool_name = params.get("name", "")
-        args = params.get("arguments", {})
-        result = execute_tool(tool_name, args)
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": result,
-        }
+        params = request.get("params", {})
+        return _reply(request_id, execute_tool(params.get("name", ""), params.get("arguments", {})))
 
-    # Method not found
-    return {
-        "jsonrpc": "2.0",
-        "id": req_id,
-        "error": {
-            "code": -32601,
-            "message": f"Method not found: {method}",
-        },
-    }
+    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": f"Method not found: {method}"}}
 
 
-def run_mcp_server(
-    stdin_stream: Optional[TextIO] = None,
-    stdout_stream: Optional[TextIO] = None,
-) -> None:
-    """Run JSON-RPC 2.0 stdio server loop."""
-    real_stdout = stdout_stream or sys.stdout
+def run_mcp_server(stdin_stream: TextIO | None = None, stdout_stream: TextIO | None = None) -> None:
+    """Read requests line by line from stdin and write each answer as one line to stdout."""
+    output = stdout_stream or sys.stdout
     saved_stdout = sys.stdout
-
     try:
-        # Redirect sys.stdout to sys.stderr so any stray prints or rich console
-        # output does not corrupt the JSON-RPC stdio protocol stream
+        # Anything else that prints (e.g. progress messages) goes to stderr, so it can't
+        # corrupt the protocol stream.
         if stdout_stream is None:
             sys.stdout = sys.stderr
 
-        input_io = stdin_stream or sys.stdin
-        output_io = real_stdout
-
-        for raw_line in input_io:
+        for raw_line in stdin_stream or sys.stdin:
             line = raw_line.strip()
             if not line:
                 continue
             try:
-                req = json.loads(line)
+                request = json.loads(line)
             except json.JSONDecodeError as err:
-                err_resp = {
-                    "jsonrpc": "2.0",
-                    "id": None,
-                    "error": {
-                        "code": -32700,
-                        "message": f"Parse error: {err}",
-                    },
-                }
-                output_io.write(json.dumps(err_resp) + "\n")
-                output_io.flush()
-                continue
-
-            resp = handle_request(req)
-            if resp is not None:
-                output_io.write(json.dumps(resp) + "\n")
-                output_io.flush()
+                response = {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {err}"}}
+            else:
+                response = handle_request(request)
+            if response is not None:
+                output.write(json.dumps(response) + "\n")
+                output.flush()
     finally:
         sys.stdout = saved_stdout

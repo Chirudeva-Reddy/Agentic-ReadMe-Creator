@@ -1,7 +1,7 @@
-"""End-to-end pipeline integration tests for Agentic ReadMe Creator."""
+"""End-to-end tests for pipeline.py and the MCP server."""
 
 from pathlib import Path
-from agentic_readme.core.runner import PipelineRunner
+from agentic_readme import pipeline
 
 
 def test_full_pipeline_run_on_sample_repo(tmp_path: Path):
@@ -34,8 +34,7 @@ def test_two():
 """, encoding="utf-8")
 
     # 2. Run pipeline
-    runner = PipelineRunner(repo_dir, output_dir=repo_dir)
-    res = runner.run_all(auto_approve_gate=True)
+    res = pipeline.run(repo_dir, repo_dir)
 
     # 3. Assert Phase 0 contracts
     assert (repo_dir / ".agentic-readme" / "story.yaml").exists()
@@ -56,7 +55,7 @@ def test_two():
 
     # 5. Assert Phase 2 verification
     assert res["passed"] is True
-    report = res["verification_report"]
+    report = res["report"]
     assert report.fatal_count == 0
 
     # 6. Check content of generated README
@@ -169,15 +168,11 @@ def test_mcp_server_stdio_stream_isolation(tmp_path: Path):
     assert len(msg2["result"]["tools"]) == 5
 
 
-def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
-    """Verify that phase_2_verify reports a fatal finding instead of crashing when README.md is missing."""
-    from agentic_readme.core.models import FactsLedger
-    from agentic_readme.core.runner import PipelineRunner
+def test_verify_missing_readme_graceful_handling(tmp_path: Path):
+    """Verify that pipeline.verify reports a fatal finding instead of crashing when README.md is missing."""
+    from agentic_readme.models import FactsLedger
 
-    ledger = FactsLedger(repo_name="empty-repo")
-    runner = PipelineRunner(tmp_path, output_dir=tmp_path)
-
-    report, passed = runner.phase_2_verify(None, ledger)
+    report, passed = pipeline.verify(tmp_path, FactsLedger(repo_name="empty-repo"))
     assert passed is False
     assert report.fatal_count == 1
     assert "README.md does not exist" in report.findings[0].message
@@ -186,7 +181,7 @@ def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
 
 
 def test_contract_path_falls_back_to_legacy_root(tmp_path):
-    from agentic_readme.core.runner import contract_path
+    from agentic_readme.pipeline import contract_path
 
     assert contract_path(tmp_path, "facts.json") == tmp_path / ".agentic-readme" / "facts.json"
     (tmp_path / "facts.json").write_text("{}")

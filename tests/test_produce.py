@@ -1,18 +1,18 @@
-"""Tests for Phase 1 Producers (Diagram, Demo, Video, Writer)."""
+"""Tests for produce/: diagram, demo, video storyboard and README writer."""
 
 import json
 from pathlib import Path
-from agentic_readme.core.models import (
+from agentic_readme.models import (
     ArchitectureNode,
     ClaimItem,
     FactsLedger,
     FactSourceType,
     StorySpec,
 )
-from agentic_readme.produce.demo_agent import DemoAgent
-from agentic_readme.produce.diagram_agent import DiagramAgent
-from agentic_readme.produce.video_agent import VideoAgent
-from agentic_readme.produce.writer_agent import WriterAgent
+from agentic_readme.produce.demo import make_demo
+from agentic_readme.produce.diagram import draw_diagrams
+from agentic_readme.produce.readme import write_readme
+from agentic_readme.produce.video import make_storyboard
 
 
 def _create_mock_contracts() -> tuple[StorySpec, FactsLedger]:
@@ -45,10 +45,9 @@ def _create_mock_contracts() -> tuple[StorySpec, FactsLedger]:
     return story, ledger
 
 
-def test_diagram_agent(tmp_path: Path):
+def test_draw_diagrams(tmp_path: Path):
     story, ledger = _create_mock_contracts()
-    agent = DiagramAgent(tmp_path)
-    assets = agent.produce(story, ledger)
+    assets = draw_diagrams(story, tmp_path)
 
     assert assets["excalidraw"].exists()
     assert assets["light_svg"].exists()
@@ -70,21 +69,19 @@ def test_diagram_agent(tmp_path: Path):
 
 
 
-def test_demo_agent(tmp_path: Path):
+def test_make_demo(tmp_path: Path):
     story, ledger = _create_mock_contracts()
-    agent = DemoAgent(tmp_path)
-    res = agent.produce(story, ledger)
+    res = make_demo(story, tmp_path)
 
     assert res["tape_file"].exists()
     assert res["hero_asset"].exists()
     assert res["static_asset"].exists()
     tape_text = res["tape_file"].read_text(encoding="utf-8")
     assert 'Type "pytest"' in tape_text
-    assert res["max_size_bytes"] == 5 * 1024 * 1024
 
 
-def test_demo_agent_xml_escaping(tmp_path: Path):
-    """Ensure DemoAgent properly escapes special characters in XML/SVG."""
+def test_demo_xml_escaping(tmp_path: Path):
+    """Ensure make_demo properly escapes special characters in XML/SVG."""
     import xml.etree.ElementTree as ET
 
     story, ledger = _create_mock_contracts()
@@ -94,8 +91,7 @@ def test_demo_agent_xml_escaping(tmp_path: Path):
         ClaimItem(claim='100% verified & tested <invariants>', evidence_file="tests/")
     ]
 
-    agent = DemoAgent(tmp_path)
-    res = agent.produce(story, ledger)
+    res = make_demo(story, tmp_path)
 
     svg_path = res["hero_asset"]
     static_svg_path = res["static_asset"]
@@ -120,10 +116,9 @@ def test_demo_agent_xml_escaping(tmp_path: Path):
     assert static_tree.getroot().attrib["viewBox"] == "0 0 800 380"
 
 
-def test_video_agent(tmp_path: Path):
+def test_make_storyboard(tmp_path: Path):
     story, ledger = _create_mock_contracts()
-    agent = VideoAgent(tmp_path)
-    res = agent.produce(story, ledger)
+    res = make_storyboard(story, ledger, tmp_path)
 
     assert res["spec_file"].exists()
     assert res["scene_table"].exists()
@@ -144,10 +139,9 @@ def test_video_agent(tmp_path: Path):
     assert spec["deliverables"]["gif"] == spec["github_safe_embed"]["preview_gif"] == "assets/video/launch-video.gif"
 
 
-def test_writer_agent_house_style(tmp_path: Path):
+def test_write_readme_house_style(tmp_path: Path):
     story, ledger = _create_mock_contracts()
-    agent = WriterAgent(tmp_path)
-    readme_path = agent.produce(story, ledger)
+    readme_path = write_readme(story, ledger, tmp_path)
 
     assert readme_path.exists()
     content = readme_path.read_text(encoding="utf-8")
@@ -175,7 +169,7 @@ def test_writer_agent_house_style(tmp_path: Path):
 
 def test_writer_without_launch_video_labels_svg_as_illustration(tmp_path: Path):
     story, ledger = _create_mock_contracts()
-    content = WriterAgent(tmp_path).produce(story, ledger).read_text(encoding="utf-8")
+    content = write_readme(story, ledger, tmp_path).read_text(encoding="utf-8")
 
     assert 'src="assets/demo/hero-demo.svg"' in content
     assert "not a screen recording" in content
@@ -190,7 +184,7 @@ def test_writer_embeds_launch_video_when_rendered(tmp_path: Path):
         (video_dir / name).write_bytes(b"x")
 
     story, ledger = _create_mock_contracts()
-    content = WriterAgent(tmp_path).produce(story, ledger).read_text(encoding="utf-8")
+    content = write_readme(story, ledger, tmp_path).read_text(encoding="utf-8")
 
     # GIF preview wrapped in a link to the MP4, poster for reduced motion, no <video> tag
     assert '<a href="assets/video/launch-video.mp4">' in content
@@ -203,8 +197,8 @@ def test_writer_embeds_launch_video_when_rendered(tmp_path: Path):
 def test_video_outro_without_git_remote_names_install_once(tmp_path: Path):
     story, ledger = _create_mock_contracts()
     story.quickstart_commands = ["pip install -e .", "python3 cli.py"]
-    outro = VideoAgent(tmp_path).produce(story, ledger)["scenes"][-1]
+    outro = make_storyboard(story, ledger, tmp_path)["scenes"][-1]
 
     assert outro["narration"] == "pip install -e ."
     assert outro["visual"] == "Install command `pip install -e .`."
-    assert "One command: python3 cli.py." == VideoAgent(tmp_path).produce(story, ledger)["scenes"][2]["narration"]
+    assert "One command: python3 cli.py." == make_storyboard(story, ledger, tmp_path)["scenes"][2]["narration"]

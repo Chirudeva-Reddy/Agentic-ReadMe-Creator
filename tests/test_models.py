@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from agentic_readme.core.models import (
+from agentic_readme.models import (
     ArchitectureNode,
     ClaimItem,
     FactsLedger,
@@ -63,10 +63,10 @@ def test_story_spec_yaml_roundtrip(tmp_path: Path):
     )
 
     yaml_file = tmp_path / "story.yaml"
-    story.save_yaml(yaml_file)
+    story.save(yaml_file)
     assert yaml_file.exists()
 
-    loaded = StorySpec.load_yaml(yaml_file)
+    loaded = StorySpec.load(yaml_file)
     assert loaded.repo_name == "duet-test"
     assert loaded.hook == story.hook
     assert len(loaded.key_claims) == 1

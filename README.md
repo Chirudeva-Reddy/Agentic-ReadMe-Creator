@@ -115,7 +115,7 @@ pip install -e ".[dev]" && pytest
 | **Codex CLI / opencode** | Copy [`skills/agentic-readme/`](skills/agentic-readme/) into your project's `.agents/skills/` | [SKILL.md](skills/agentic-readme/SKILL.md) |
 | **Claude Desktop / Cursor** | Add `{"command": "agentic-readme", "args": ["mcp"]}` under `mcpServers`. This exposes 5 tools. | [MCP guide](integrations/mcp/README.md) |
 | **ChatGPT / OpenAI API** | Function-calling schemas and a Custom GPT OpenAPI spec | [GPT guide](integrations/gpt/README.md) |
-| **Python** | `PipelineRunner(repo_path=".").run_all()` | [runner.py](src/agentic_readme/core/runner.py) |
+| **Python** | `from agentic_readme import pipeline; pipeline.run(".")` | [pipeline.py](src/agentic_readme/pipeline.py) |
 
 ## What this project demonstrates
 
@@ -153,7 +153,7 @@ For reviewers who want the engineering summary:
 
 ## What's in this repo
 
-- `src/agentic_readme/` — the package, one folder per phase: `ground/`, `produce/`, `verify/`, plus `core/` (runner, models) and `rubrics/` (style rules)
+- `src/agentic_readme/` — the package, one folder per phase: `ground/`, `produce/`, `verify/`, plus `pipeline.py` (the steps on one page), `models.py` (data shapes) and `rules.py` (style rules)
 - `tests/` — the pytest suite
 - `skills/agentic-readme/` — the Claude Code skill
 - `integrations/` — MCP config (`mcp/mcp.json`) and OpenAI / Custom GPT setup

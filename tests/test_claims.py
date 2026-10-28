@@ -1,17 +1,17 @@
-"""Tests for Phase 2 Claim Auditor: Fact drift and jargon leakage detection."""
+"""Tests for verify/claims.py: fact drift and jargon leakage detection."""
 
 from pathlib import Path
-from agentic_readme.core.models import (
+from agentic_readme.models import (
     FactsLedger,
     FactSourceType,
     FindingCategory,
     FindingSeverity,
     VerificationReport,
 )
-from agentic_readme.verify.claim_auditor import ClaimAuditor
+from agentic_readme.verify.claims import check_claims
 
 
-def test_claim_auditor_catches_claimlens_52_vs_44_test_drift(tmp_path: Path):
+def test_claims_catches_claimlens_52_vs_44_test_drift(tmp_path: Path):
     """Recreate and catch the exact ClaimLens bug:
 
     Badge states '52 passed', while body text states '44 tests' or
@@ -35,8 +35,7 @@ def test_claim_auditor_catches_claimlens_52_vs_44_test_drift(tmp_path: Path):
 Run the test suite across 44 tests to verify triage.
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(drifted_readme)
+    report = check_claims(drifted_readme, ledger)
 
     # Must flag the 44 tests drift!
     drift_findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
@@ -46,7 +45,7 @@ Run the test suite across 44 tests to verify triage.
     assert report.passed is False
 
 
-def test_claim_auditor_catches_badge_drift(tmp_path: Path):
+def test_claims_catches_badge_drift(tmp_path: Path):
     """When badge claims 60 tests but ledger has 52 tests."""
     ledger = FactsLedger(repo_name="ClaimLens")
     ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
@@ -56,8 +55,7 @@ def test_claim_auditor_catches_badge_drift(tmp_path: Path):
 [![Tests](https://img.shields.io/badge/tests-60%20passed-success.svg)](tests/)
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     drift_findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
     assert len(drift_findings) == 1
@@ -65,7 +63,7 @@ def test_claim_auditor_catches_badge_drift(tmp_path: Path):
     assert drift_findings[0].expected == "52"
 
 
-def test_claim_auditor_catches_internal_jargon_leakage(tmp_path: Path):
+def test_claims_catches_internal_jargon_leakage(tmp_path: Path):
     """Catches internal development artifacts leaking into public READMEs:
 
     - 'Option C Architecture' (ClaimLens real bug)
@@ -80,8 +78,7 @@ Refer to Blueprint §11/§13 for the implementation details.
 Visit localhost:8000 to view dashboard.
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     jargon_findings = [f for f in report.findings if f.category == FindingCategory.JARGON_LEAKAGE]
     assert len(jargon_findings) >= 3
@@ -92,7 +89,7 @@ Visit localhost:8000 to view dashboard.
     assert any("localhost:8000" in j for j in jargon_texts)
 
 
-def test_claim_auditor_passes_clean_readme(tmp_path: Path):
+def test_claims_passes_clean_readme(tmp_path: Path):
     ledger = FactsLedger(repo_name="verified-repo")
     ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
     ledger.add_fact("license", "MIT", "LICENSE", FactSourceType.SOURCE_CODE)
@@ -109,13 +106,12 @@ def test_claim_auditor_passes_clean_readme(tmp_path: Path):
 Our suite includes 52 tests verifying system functionality.
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
     assert report.fatal_count == 0
     assert report.passed is True
 
 
-def test_claim_auditor_catches_small_repo_test_drift(tmp_path: Path):
+def test_claims_catches_small_repo_test_drift(tmp_path: Path):
     """Proves fix for the boundary bug where repos with <= 5 tests silently ignored drift."""
     ledger = FactsLedger(repo_name="small-repo")
     ledger.add_fact("test_count", 3, "tests/", FactSourceType.TEST_RUN)
@@ -125,15 +121,14 @@ def test_claim_auditor_catches_small_repo_test_drift(tmp_path: Path):
 We run 4 tests to ensure system stability.
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
     findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
     assert len(findings) == 1
     assert findings[0].actual == "4"
     assert findings[0].expected == "3"
 
 
-def test_claim_auditor_catches_cross_asset_drift(tmp_path: Path):
+def test_claims_catches_cross_asset_drift(tmp_path: Path):
     """Cross-asset auditing across /brag video spec, demo tape, and Excalidraw."""
     ledger = FactsLedger(repo_name="multi-asset")
     ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
@@ -152,8 +147,7 @@ def test_claim_auditor_catches_cross_asset_drift(tmp_path: Path):
     readme = tmp_path / "README.md"
     readme.write_text("# multi-asset\nVerified across 52 tests.\n", encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     # Should catch test drift in video spec (44 vs 52)
     video_drifts = [f for f in report.findings if f.location == "assets/video/brag_spec.json" and f.category == FindingCategory.FACT_DRIFT]
@@ -166,7 +160,7 @@ def test_claim_auditor_catches_cross_asset_drift(tmp_path: Path):
     assert "Option C Architecture" in video_jargons[0].actual
 
 
-def test_claim_auditor_catches_benchmark_metric_drift(tmp_path: Path):
+def test_claims_catches_benchmark_metric_drift(tmp_path: Path):
     """Verifies that numeric benchmark assertions in text are checked against facts.json."""
     ledger = FactsLedger(repo_name="bench-repo")
     ledger.add_fact("metric_accuracy", 0.94, "data/results.json", FactSourceType.BENCHMARK)
@@ -176,8 +170,7 @@ def test_claim_auditor_catches_benchmark_metric_drift(tmp_path: Path):
 Our model achieves accuracy of 0.50 on the benchmark.
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     metric_findings = [f for f in report.findings if "accuracy" in f.message.lower()]
     assert len(metric_findings) >= 1
@@ -185,7 +178,7 @@ Our model achieves accuracy of 0.50 on the benchmark.
     assert metric_findings[0].expected == "0.94"
 
 
-def test_claim_auditor_catches_broken_badge_evidence_links(tmp_path: Path):
+def test_claims_catches_broken_badge_evidence_links(tmp_path: Path):
     """Flags badges linking to files that don't exist in the repository."""
     ledger = FactsLedger(repo_name="badge-repo")
     readme = tmp_path / "README.md"
@@ -193,15 +186,14 @@ def test_claim_auditor_catches_broken_badge_evidence_links(tmp_path: Path):
 <a href="nonexistent/evidence.json"><img src="https://img.shields.io/badge/eval-passed-green" alt="eval"></a>
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     broken = [f for f in report.findings if "missing evidence target" in f.message.lower()]
     assert len(broken) == 1
     assert "nonexistent/evidence.json" in broken[0].actual
 
 
-def test_claim_auditor_catches_loc_drift(tmp_path: Path):
+def test_claims_catches_loc_drift(tmp_path: Path):
     """Verifies that LOC discrepancies between README and FactsLedger are caught."""
     ledger = FactsLedger(repo_name="loc-repo")
     ledger.add_fact("python_loc", 4106, "src/", FactSourceType.SOURCE_CODE)
@@ -215,8 +207,7 @@ Modular architecture spanning 3709 lines of code across pipeline stages.
 | Modular architecture | `loc: 3709` | `src/` | ✅ Verified |
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     loc_findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT and "lines of code" in f.message.lower() or "loc" in f.message.lower()]
     assert len(loc_findings) >= 1
@@ -225,7 +216,7 @@ Modular architecture spanning 3709 lines of code across pipeline stages.
     assert report.passed is False
 
 
-def test_claim_auditor_catches_evidence_table_drift(tmp_path: Path):
+def test_claims_catches_evidence_table_drift(tmp_path: Path):
     """Flags ungrounded metrics and mismatched values in the Evidence table."""
     ledger = FactsLedger(repo_name="evidence-repo")
     ledger.add_fact("test_count", 50, "tests/", FactSourceType.TEST_RUN)
@@ -240,8 +231,7 @@ def test_claim_auditor_catches_evidence_table_drift(tmp_path: Path):
 | Unknown metric | `unknown_metric: 123` | `data.json` | ✅ Verified |
 """, encoding="utf-8")
 
-    auditor = ClaimAuditor(ledger)
-    report = auditor.audit(readme)
+    report = check_claims(readme, ledger)
 
     findings = [f for f in report.findings if f.category == FindingCategory.FACT_DRIFT]
     # Mismatched test_count
