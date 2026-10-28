@@ -190,3 +190,39 @@ def test_src_package_cli_is_found_as_entrypoint(tmp_path: Path):
     (tmp_path / "src" / "tool" / "cli.py").write_text("print('hi')\n", encoding="utf-8")
 
     assert detect_project(tmp_path).entrypoints == ["src/tool/cli.py"]
+
+
+def test_git_remote_url_drops_embedded_credentials(tmp_path: Path):
+    import json
+    import subprocess
+
+    from agentic_readme.ground.facts import strip_url_credentials
+
+    token = "ghs_SuperSecretToken123"
+    (tmp_path / "pyproject.toml").write_text('requires-python = ">=3.11"\n', encoding="utf-8")
+    (tmp_path / "app.py").write_text("print('hi')\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", f"https://x-access-token:{token}@github.com/owner/repo.git"],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    project = detect_project(tmp_path)
+    ledger = collect_facts(tmp_path, project.entrypoints)
+    facts_file = tmp_path / "facts.json"
+    ledger.save(facts_file)
+    facts = json.loads(facts_file.read_text(encoding="utf-8"))
+    remote = facts["facts"]["git_remote_url"]
+    assert remote["value"] == "https://github.com/owner/repo.git"
+    assert token not in facts_file.read_text(encoding="utf-8")
+
+    story = build_story(project, ledger)
+    assert any("git clone https://github.com/owner/repo.git" in cmd for cmd in story.quickstart_commands)
+    assert not any(token in cmd or "x-access-token" in cmd for cmd in story.quickstart_commands)
+
+    # SSH remotes carry no secret and are recorded unchanged.
+    subprocess.run(["git", "remote", "set-url", "origin", "git@github.com:owner/repo.git"], cwd=tmp_path, check=True)
+    ledger = collect_facts(tmp_path, entrypoints=[])
+    assert ledger.get_fact("git_remote_url").value == "git@github.com:owner/repo.git"
+    assert strip_url_credentials("ssh://git@github.com/owner/repo.git") == "ssh://git@github.com/owner/repo.git"

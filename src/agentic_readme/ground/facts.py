@@ -35,6 +35,17 @@ def collect_facts(repo: Path, entrypoints: list[str]) -> FactsLedger:
 
 # --- helpers ---------------------------------------------------------------------------
 
+# Userinfo in an HTTP(S) URL, e.g. https://x-access-token:<token>@github.com/owner/repo.git.
+# A bare username counts too: https://<token>@github.com is a common CI form.
+# SSH remotes (git@github.com:owner/repo.git, ssh://git@...) are left alone.
+_HTTP_URL_CREDENTIALS = re.compile(r"(?i)(?<=\bhttps://)[^/\s@]+@|(?<=\bhttp://)[^/\s@]+@")
+
+
+def strip_url_credentials(text: str) -> str:
+    """Remove the `user[:pass]@` part from any HTTP(S) URLs in text."""
+    return _HTTP_URL_CREDENTIALS.sub("", text)
+
+
 def _run(command: list[str], repo: Path, timeout: int) -> subprocess.CompletedProcess | None:
     """Run a command inside the repo. Returns None if it can't start or takes too long."""
     try:
@@ -68,7 +79,8 @@ def _git_facts(repo: Path, facts: FactsLedger) -> None:
 
     remote = _run(["git", "config", "--get", "remote.origin.url"], repo, timeout=5)
     if remote and remote.returncode == 0 and remote.stdout.strip():
-        facts.add_fact("git_remote_url", remote.stdout.strip(), ".git/config",
+        # Never record a token from the remote URL; it ends up in facts.json and the README.
+        facts.add_fact("git_remote_url", strip_url_credentials(remote.stdout.strip()), ".git/config",
                        FactSourceType.GIT, "Git remote repository URL")
 
 
