@@ -54,7 +54,7 @@ This downloads Python 3.12 if you don't have it. You don't need to install Pytho
 agentic-readme --help
 ```
 
-You should see a list of commands (`ground`, `produce`, `verify`, `audit`, `run`, `mcp`). If you see `command not found`, close and reopen the terminal, then try again.
+You should see a list of commands (`ground`, `produce`, `verify`, `audit`, `run`, `agent`, `eval`, `mcp`). If you see `command not found`, close and reopen the terminal, then try again.
 
 ### Step 5: Run it on your project
 
@@ -105,11 +105,33 @@ pytest
 | `agentic-readme ground <repo> [--hook "..."] [--audience "..."]` | Reads the code, runs its tests, and writes `.agentic-readme/facts.json` + `story.yaml`. An existing `story.yaml` keeps your edits; only its numbers are refreshed. Delete it to start over. | Yes, contracts only |
 | `agentic-readme produce <repo>` | Builds `README.md`, diagrams, demo tape, and video storyboard from those two files | Yes, overwrites `README.md` |
 | `agentic-readme verify <repo>` | Checks every claim, link, and badge; auto-fixes drift; exits `1` on fatal findings | Only auto-fixes |
-| `agentic-readme run <repo>` | `ground` → `produce` → `verify` in one go | Yes |
+| `agentic-readme run <repo> [--review]` | `ground` → `produce` → `verify` in one go. `--review` pauses after `ground` so you can edit `story.yaml` first | Yes |
+| `agentic-readme agent <repo> [--review] [--model provider:model]` | The LLM agent: Claude rewrites the story's words, rebuilds and verifies the README, and repeats until verify passes. Needs `ANTHROPIC_API_KEY` | Yes |
+| `agentic-readme eval [--model provider:model]` | Scores the agent on every project in `examples/` as a LangSmith experiment. Needs `ANTHROPIC_API_KEY` and `LANGSMITH_API_KEY` | No (works on temp copies) |
 | `agentic-readme audit README.md --facts .agentic-readme/facts.json` | Read-only check of any README against a ledger | No |
 | `agentic-readme mcp` | Starts the MCP stdio server | No |
 
-The recommended loop is `ground`, then review `.agentic-readme/story.yaml` (especially `hook:`, which is the first line people read), then `produce`, then `verify`.
+The recommended loop is `ground`, then review `.agentic-readme/story.yaml` (especially `hook:`, which is the first line people read), then `produce`, then `verify`. `agentic-readme agent` has Claude do the review-and-rewrite step for you.
+
+### The LLM agent
+
+```bash
+export ANTHROPIC_API_KEY=...          # from console.anthropic.com
+```
+
+```bash
+agentic-readme agent path/to/your-project --review
+```
+
+It prints every step: each tool Claude calls, and each final check. With `--review` it stops before writing the README so you can approve the story or say what to change. The default model is `anthropic:claude-opus-5-5`. Use `--model`, or set `AGENTIC_README_MODEL`, to pick another; any LangChain `provider:model` string works once that provider's package is installed.
+
+To record every step in [LangSmith](https://smith.langchain.com), also set these. Runs go to the `agentic-readme` project unless `LANGSMITH_PROJECT` says otherwise:
+
+```bash
+export LANGSMITH_TRACING=true LANGSMITH_API_KEY=...
+```
+
+`ground`, `produce`, `verify`, `run` and `audit` never call an LLM, so CI needs no key.
 
 ### Use it in CI
 
@@ -202,4 +224,5 @@ See the [GPT integration guide](../integrations/gpt/README.md) for function-call
 | `requires a different Python: 3.9.x` | Your Python is too old. Use the Track A command, which pulls Python 3.12 automatically. |
 | Test count is `0` or missing | The tool looks for `tests/` or `test/` (pytest), `*.test.js` / `*.spec.js` (Node), or `#[test]` (Rust). |
 | `Badge links to missing evidence target` | A badge points to a file that doesn't exist. Add the file (e.g. `LICENSE`) or remove the badge. |
-| README came out generic | Edit `hook:` in `.agentic-readme/story.yaml` (or pass `--hook` to `ground`), then run `produce` again. |
+| README came out generic | Edit `hook:` in `.agentic-readme/story.yaml` (or pass `--hook` to `ground`), then run `produce` again. Or run `agentic-readme agent`, which rewrites it for you. |
+| `Error: set ANTHROPIC_API_KEY to run the agent` | Export your Anthropic API key, or use `agentic-readme run`, which needs no key. |

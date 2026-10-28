@@ -1,24 +1,14 @@
-"""Tests for Phase 2 Evaluator-Optimizer auto-fixing loop."""
+"""Tests for verify/fixer.py, run through the check -> fix -> check loop in pipeline.verify."""
 
 from pathlib import Path
-from agentic_readme.core.models import ArchitectureNode, ClaimItem, FactsLedger, FactSourceType, StorySpec
-from agentic_readme.verify.optimizer import EvaluatorOptimizer
+from agentic_readme.models import FactsLedger, FactSourceType
+from agentic_readme.pipeline import verify
 
 
-def test_optimizer_auto_fixes_drift_video_and_jargon(tmp_path: Path):
+def test_verify_auto_fixes_drift_video_and_jargon(tmp_path: Path):
     ledger = FactsLedger(repo_name="demo-repo")
     ledger.add_fact("test_count", 52, "tests/", FactSourceType.TEST_RUN)
     ledger.add_fact("license", "MIT", "LICENSE", FactSourceType.SOURCE_CODE)
-
-    story = StorySpec(
-        repo_name="demo-repo",
-        target_audience="Devs",
-        hook="Fast triage.",
-        problem="Opaque triage.",
-        solution="Explainable triage.",
-        key_claims=[ClaimItem(claim="52 passing tests", evidence_file="tests/")],
-        architecture_nodes=[ArchitectureNode(id="core", label="Core Engine")],
-    )
 
     readme = tmp_path / "README.md"
     readme.write_text("""# demo-repo
@@ -32,8 +22,7 @@ Run our suite of 44 passing tests.
 </video>
 """, encoding="utf-8")
 
-    optimizer = EvaluatorOptimizer(tmp_path, ledger)
-    report, passed = optimizer.run_loop(readme, story, max_rounds=2)
+    report, passed = verify(tmp_path, ledger, max_rounds=2)
 
     fixed_content = readme.read_text(encoding="utf-8")
 

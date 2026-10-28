@@ -1,7 +1,7 @@
-"""End-to-end pipeline integration tests for Agentic ReadMe Creator."""
+"""End-to-end tests for pipeline.py and the MCP server."""
 
 from pathlib import Path
-from agentic_readme.core.runner import PipelineRunner
+from agentic_readme import pipeline
 
 
 def test_full_pipeline_run_on_sample_repo(tmp_path: Path):
@@ -34,8 +34,7 @@ def test_two():
 """, encoding="utf-8")
 
     # 2. Run pipeline
-    runner = PipelineRunner(repo_dir, output_dir=repo_dir)
-    res = runner.run_all(auto_approve_gate=True)
+    res = pipeline.run(repo_dir, repo_dir)
 
     # 3. Assert Phase 0 contracts
     assert (repo_dir / ".agentic-readme" / "story.yaml").exists()
@@ -56,7 +55,7 @@ def test_two():
 
     # 5. Assert Phase 2 verification
     assert res["passed"] is True
-    report = res["verification_report"]
+    report = res["report"]
     assert report.fatal_count == 0
 
     # 6. Check content of generated README
@@ -169,15 +168,11 @@ def test_mcp_server_stdio_stream_isolation(tmp_path: Path):
     assert len(msg2["result"]["tools"]) == 5
 
 
-def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
-    """Verify that phase_2_verify reports a fatal finding instead of crashing when README.md is missing."""
-    from agentic_readme.core.models import FactsLedger
-    from agentic_readme.core.runner import PipelineRunner
+def test_verify_missing_readme_graceful_handling(tmp_path: Path):
+    """Verify that pipeline.verify reports a fatal finding instead of crashing when README.md is missing."""
+    from agentic_readme.models import FactsLedger
 
-    ledger = FactsLedger(repo_name="empty-repo")
-    runner = PipelineRunner(tmp_path, output_dir=tmp_path)
-
-    report, passed = runner.phase_2_verify(None, ledger)
+    report, passed = pipeline.verify(tmp_path, FactsLedger(repo_name="empty-repo"))
     assert passed is False
     assert report.fatal_count == 1
     assert "README.md does not exist" in report.findings[0].message
@@ -186,7 +181,7 @@ def test_pipeline_runner_missing_readme_graceful_handling(tmp_path: Path):
 
 
 def test_contract_path_falls_back_to_legacy_root(tmp_path):
-    from agentic_readme.core.runner import contract_path
+    from agentic_readme.pipeline import contract_path
 
     assert contract_path(tmp_path, "facts.json") == tmp_path / ".agentic-readme" / "facts.json"
     (tmp_path / "facts.json").write_text("{}")
@@ -194,3 +189,55 @@ def test_contract_path_falls_back_to_legacy_root(tmp_path):
     (tmp_path / ".agentic-readme").mkdir()
     (tmp_path / ".agentic-readme" / "facts.json").write_text("{}")
     assert contract_path(tmp_path, "facts.json") == tmp_path / ".agentic-readme" / "facts.json"
+
+
+def _sample_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "gated"
+    (repo / "tests").mkdir(parents=True)
+    (repo / "cli.py").write_text("print('hi')\n", encoding="utf-8")
+    (repo / "LICENSE").write_text("MIT License", encoding="utf-8")
+    (repo / "tests" / "test_cli.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+    return repo
+
+
+def test_run_review_gate_uses_human_edits_and_can_stop(tmp_path: Path, monkeypatch):
+    """`run --review` pauses after ground: 'no' stops; edits made during the pause are used."""
+    import typer
+    from typer.testing import CliRunner
+    from agentic_readme.cli import app
+    from agentic_readme.models import StorySpec
+
+    repo = _sample_repo(tmp_path)
+    stopped = CliRunner().invoke(app, ["run", str(repo), "--review"], input="n\n")
+    assert stopped.exit_code == 1
+    assert not (repo / "README.md").exists()
+
+    def edit_story_then_approve(question: str) -> bool:
+        story_file = repo / ".agentic-readme" / "story.yaml"
+        story = StorySpec.load(story_file)
+        story.hook = "Edited during review."
+        story.save(story_file)
+        return True
+
+    monkeypatch.setattr(typer, "confirm", edit_story_then_approve)
+    approved = CliRunner().invoke(app, ["run", str(repo), "--review"])
+    assert approved.exit_code == 0, approved.output
+    assert "<em>Edited during review.</em>" in (repo / "README.md").read_text(encoding="utf-8")
+
+
+def test_mcp_run_without_auto_approve_stops_at_gate_and_findings_carry_fixes(tmp_path: Path):
+    from agentic_readme.mcp import execute_tool
+
+    repo = _sample_repo(tmp_path)
+    gated = execute_tool("agentic_readme_run", {"repo_path": str(repo), "auto_approve": False})
+    assert "Stopped at the review gate" in gated["content"][0]["text"]
+    assert not (repo / "README.md").exists()
+
+    execute_tool("agentic_readme_produce", {"dir_path": str(repo)})
+    readme = repo / "README.md"
+    readme.write_text(readme.read_text(encoding="utf-8").replace("tests-1%20passed", "tests-40%20passed"), encoding="utf-8")
+    audit = execute_tool("agentic_readme_audit", {"readme_path": str(readme)})
+    text = audit["content"][0]["text"]
+    assert audit["isError"] is True
+    assert "[fatal] fact_drift: Test count badge drift" in text
+    assert "  Fix: Update badge to reflect verified test count: tests-1%20passed." in text

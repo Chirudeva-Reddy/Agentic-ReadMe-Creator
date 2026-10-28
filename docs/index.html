@@ -237,7 +237,7 @@
     <p class="section-lede">Most README generators start by writing. This one starts by measuring what's true about the code, then only lets the README say that.</p>
     <div class="phases">
       <div class="phase"><div class="n">01 · ground</div><h3>Record the facts</h3><p>Collects the tests, reads the license and config, runs the CLI's <code>--help</code>. Writes <code>facts.json</code>.</p></div>
-      <div class="phase you"><div class="n">02 · you</div><h3>Edit one line</h3><p>Rewrite the <code>hook</code> in <code>story.yaml</code> as the problem a stranger recognises.</p></div>
+      <div class="phase you"><div class="n">02 · you or the agent</div><h3>Edit one line</h3><p>Rewrite the <code>hook</code> in <code>story.yaml</code> as the problem a stranger recognises. <code>agentic-readme agent</code> has Claude do it, and its tools reject any number not in <code>facts.json</code>.</p></div>
       <div class="phase"><div class="n">03 · produce</div><h3>Write the README</h3><p>README, light and dark diagrams, and a video storyboard, all built from those two files.</p></div>
       <div class="phase"><div class="n">04 · verify</div><h3>Check every claim</h3><p>Badges, numbers, and links are checked against <code>facts.json</code>. Exits <code>1</code> on a lie.</p></div>
       <div class="phase"><div class="n">05 · launch</div><h3>Render the video</h3><p>An AI agent renders the storyboard with <a href="https://github.com/latent-spaces/brag">/brag</a>. It becomes the README's top image.</p></div>
@@ -312,10 +312,10 @@ cli_help_output  "usage: cli.py [-h] [--key KEY]
         <div class="two">
           <pre class="term"><span class="p">$</span> agentic-readme produce .
 [Phase 1: PRODUCE] Generating assets from locked story &amp; facts...
-  <span class="add">✔ Diagram Agent:</span> generated .excalidraw + light/dark SVGs
-  <span class="add">✔ Demo Agent:</span> generated VHS script + hero asset
-  <span class="add">✔ Video Agent:</span> generated /brag 20s spec + scene table
-  <span class="add">✔ Writer Agent:</span> generated candidate README.md</pre>
+  <span class="add">✔ Diagrams:</span> .excalidraw + light, dark and static SVGs
+  <span class="add">✔ Demo:</span> VHS script + illustrated terminal preview
+  <span class="add">✔ Video storyboard:</span> /brag 20s spec + scene table
+  <span class="add">✔ README:</span> candidate README.md</pre>
           <pre class="term"><span class="c">&lt;!-- README.md, under the hero image --&gt;</span>
 &lt;sub&gt;Illustrated preview of the quickstart,
 not a screen recording. Record the real run
@@ -336,7 +336,7 @@ Summary: 23 facts checked. 0 fatal errors, 0 warnings.</pre>
 <span class="add">+ badge/tests-40%20passed</span>
 <span class="p">$</span> agentic-readme audit README.md --facts .agentic-readme/facts.json
 <span class="c"># report table flattened to lines</span>
-<span class="hl-bad">fact_drift │ <span class="del">Fatal Functional Bug</span> Test count badge drift:</span>
+<span class="hl-bad">fact_drift │ <span class="del">fatal</span> │ Test count badge drift:</span>
   badge claims 40 tests passed, but facts ledger
   records 4.
 Summary: 23 facts checked. <span class="del">1 fatal errors</span>

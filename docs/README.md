@@ -8,10 +8,11 @@ Two things live here:
 | Doc | What's in it |
 | :--- | :--- |
 | [INSTALL.md](INSTALL.md) | Beginner, developer, AI-assistant, and Codespaces setup, plus CI and troubleshooting |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | The three phases, contracts, and agents |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | The agent graph, its tools and guardrails, and the deterministic pipeline underneath |
+| [CODE_TOUR.md](CODE_TOUR.md) | One run followed through every file, for Python beginners, plus interview questions |
 | [LAUNCH_VIDEO.md](LAUNCH_VIDEO.md) | How the video was made, and the first-20-seconds README method |
 | [HOUSE_STYLE.md](HOUSE_STYLE.md) | The README patterns the writer follows |
-| [EVALUATION.md](EVALUATION.md) | The benchmark protocol for evaluating output quality |
+| [EVALUATION.md](EVALUATION.md) | `agentic-readme eval` (LangSmith experiments) and the broader benchmark protocol |
 
 ## Local preview
 
