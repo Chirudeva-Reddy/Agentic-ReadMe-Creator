@@ -28,7 +28,7 @@ class Project:
 
 
 # Files that usually start a program, checked in this order.
-PYTHON_ENTRYPOINTS = ["main.py", "app.py", "cli.py", "run.py", "src/agentic_readme/cli.py"]
+PYTHON_ENTRYPOINTS = ["main.py", "app.py", "cli.py", "run.py"]  # then src/<package>/cli.py
 NODE_ENTRYPOINTS = ["index.js", "src/index.ts", "main.js", "app.js"]
 RUST_ENTRYPOINTS = ["src/main.rs", "src/lib.rs"]
 
@@ -76,6 +76,7 @@ def _language_and_entrypoints(repo: Path) -> tuple[str, list[str]]:
     py_files = list(repo.glob("*.py")) + list(repo.glob("src/**/*.py"))
     if (repo / "pyproject.toml").exists() or (repo / "setup.py").exists() or py_files:
         entrypoints = _existing(repo, PYTHON_ENTRYPOINTS)
+        entrypoints += sorted(str(p.relative_to(repo)) for p in repo.glob("src/*/cli.py"))
         if not entrypoints and py_files:
             entrypoints = [str(py_files[0].relative_to(repo))]
         return "Python", entrypoints
@@ -112,7 +113,7 @@ def _commands(repo: Path, language: str, entrypoints: list[str]) -> tuple[str | 
 def _folders(parent: Path, skip: set[str]) -> list[Path]:
     """Sub-folders of `parent` that could be a main part of the project."""
     return [
-        p for p in parent.iterdir()
+        p for p in sorted(parent.iterdir())  # sorted, so the diagram is the same on every machine
         if p.is_dir()
         and not p.name.startswith(".")
         and not p.name.endswith(".egg-info")

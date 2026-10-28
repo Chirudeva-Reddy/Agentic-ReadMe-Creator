@@ -170,3 +170,23 @@ def test_refresh_story_keeps_edits_and_updates_numbers():
     assert out.key_claims[0].metrics == {"test_count": 53}
     assert out.key_claims[1].claim == "3900 lines of code." and out.key_claims[1].metrics == {"loc": 3900}
     assert refresh_story(story, ledger, hook="New hook.").hook == "New hook."
+
+
+def test_evidence_metrics_found_under_dotted_parent_dir(tmp_path: Path):
+    """Benchmark files must still count when the repo itself lives under a dot-directory."""
+    repo = tmp_path / ".projects" / "bench"
+    (repo / "data").mkdir(parents=True)
+    (repo / "data" / "results.json").write_text('{"accuracy": 0.91}', encoding="utf-8")
+
+    ledger = collect_facts(repo, entrypoints=[])
+
+    assert ledger.get_fact("metric_accuracy").value == 0.91
+
+
+def test_src_package_cli_is_found_as_entrypoint(tmp_path: Path):
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "tool"\n', encoding="utf-8")
+    (tmp_path / "src" / "tool").mkdir(parents=True)
+    (tmp_path / "src" / "tool" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "src" / "tool" / "cli.py").write_text("print('hi')\n", encoding="utf-8")
+
+    assert detect_project(tmp_path).entrypoints == ["src/tool/cli.py"]

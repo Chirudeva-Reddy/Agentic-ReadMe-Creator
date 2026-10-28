@@ -235,7 +235,7 @@ def _evidence_metrics(repo: Path, facts: FactsLedger) -> None:
         if not (repo / folder).is_dir():
             continue
         for path in (repo / folder).rglob("*.json"):
-            if path.is_file() and not any(part.startswith(".") for part in path.parts) and path not in files:
+            if path.is_file() and not _is_ignored(path, repo, set()) and path not in files:
                 files.append(path)
 
     for path in files[:10]:  # cap at 10 files
