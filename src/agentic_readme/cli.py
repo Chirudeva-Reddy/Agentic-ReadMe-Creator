@@ -93,12 +93,26 @@ def audit(
 def run(
     repo_path: Path = typer.Argument(Path("."), help="Path to repository"),
     output_dir: Path | None = typer.Option(None, "--output", "-o", help="Output directory"),
-    auto_approve: bool = typer.Option(True, "--auto-approve", help="Automatically approve Phase 0 gate"),
+    review: bool = typer.Option(False, "--review", help="Pause after grounding so you can edit story.yaml"),
 ):
     """Run full 3-phase pipeline (Ground -> Produce -> Verify)."""
-    result = pipeline.run(repo_path, output_dir, auto_approve)
-    _show(result["report"])
-    if not result["passed"]:
+    if not review:
+        result = pipeline.run(repo_path, output_dir)
+        _show(result["report"])
+        if not result["passed"]:
+            raise typer.Exit(code=1)
+        return
+
+    out = output_dir or repo_path
+    pipeline.ground(repo_path, out)
+    console.print("[bold yellow]⏸ Review gate:[/bold yellow] edit .agentic-readme/story.yaml now if you want to.")
+    if not typer.confirm("Continue to produce and verify?"):
+        raise typer.Exit(code=1)
+    story, facts = pipeline.load_contracts(out)  # re-read, so your edits are used
+    pipeline.produce(story, facts, out)
+    report, passed = pipeline.verify(out, facts)
+    _show(report)
+    if not passed:
         raise typer.Exit(code=1)
 
 

@@ -107,7 +107,7 @@ TOOLS: list[dict[str, Any]] = [
                 },
                 "auto_approve": {
                     "type": "boolean",
-                    "description": "Automatically approve Phase 0 contract gate (default: true)",
+                    "description": "Skip the review gate (default: true). false stops after grounding so you can review story.yaml before producing.",
                     "default": True,
                 },
             },
@@ -124,10 +124,13 @@ def _result(text: str, is_error: bool = False) -> dict[str, Any]:
 
 
 def _finding_lines(report: VerificationReport) -> list[str]:
-    return [
-        f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})"
-        for f in report.findings
-    ]
+    """One line per finding, plus how to fix it, so the calling agent can act on it."""
+    lines = []
+    for f in report.findings:
+        lines.append(f"- [{f.severity.value}] {f.category.value}: {f.message} (Location: {f.location or 'general'})")
+        if f.suggested_fix:
+            lines.append(f"  Fix: {f.suggested_fix}")
+    return lines
 
 
 def _audit(args: dict) -> dict:
@@ -199,7 +202,15 @@ def _verify(args: dict) -> dict:
 
 def _run(args: dict) -> dict:
     repo = Path(args.get("repo_path", "."))
-    result = pipeline.run(repo, repo, args.get("auto_approve", True))
+    if not args.get("auto_approve", True):
+        # The gate: stop after ground so the caller can review and edit story.yaml first.
+        story, facts = pipeline.ground(repo, repo)
+        return _result(
+            f"Stopped at the review gate after grounding {story.repo_name} ({len(facts.facts)} facts).\n"
+            f"Review {pipeline.contract_path(repo, 'story.yaml')} (edit the hook, problem and solution if needed), "
+            f"then call agentic_readme_produce and agentic_readme_verify."
+        )
+    result = pipeline.run(repo, repo)
     report = result["report"]
     lines = [
         f"Full Pipeline Execution {'PASSED' if result['passed'] else 'FAILED'}:",

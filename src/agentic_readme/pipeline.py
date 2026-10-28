@@ -149,12 +149,10 @@ def verify(project_dir: Path, facts: FactsLedger, max_rounds: int = 2) -> tuple[
     return report, passed
 
 
-def run(repo_path: Path, output_dir: Path | None = None, auto_approve: bool = True) -> dict:
-    """ground -> produce -> verify, in one call."""
+def run(repo_path: Path, output_dir: Path | None = None) -> dict:
+    """ground -> produce -> verify, in one call (no review gate; see `agentic-readme run --review`)."""
     out = Path(output_dir or repo_path).resolve()
     story, facts = ground(repo_path, out)
-    if not auto_approve:
-        console.print("[bold yellow]⏸ HUMAN GATE: Please inspect .agentic-readme/story.yaml and facts.json before continuing.[/bold yellow]")
     assets = produce(story, facts, out)
     report, passed = verify(out, facts)
     return {"story": story, "facts": facts, "assets": assets, "report": report, "passed": passed}
