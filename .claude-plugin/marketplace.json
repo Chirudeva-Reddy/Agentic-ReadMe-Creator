@@ -1,6 +1,6 @@
 {
   "name": "agentic-readme",
-  "description": "Write a README from your code, then fail the build if the two ever disagree.",
+  "description": "Create a README from your code, ready to push to GitHub, with diagrams, a terminal demo, and a launch video that show at a glance what your project does.",
   "owner": {
     "name": "Chirudeva-Reddy",
     "url": "https://github.com/Chirudeva-Reddy"
