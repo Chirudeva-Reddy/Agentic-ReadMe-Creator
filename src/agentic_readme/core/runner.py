@@ -1,51 +1,28 @@
-"""End-to-end Pipeline Runner for Agentic ReadMe Creator.
+"""Python entry point for Agentic ReadMe Creator.
 
-Orchestrates the 3-phase flow:
+Each phase runs on the LangGraph graphs in orchestrate/graph.py:
 - Phase 0: Ground (RepoAnalyst -> story.yaml & facts.json)
-- Human Gate (Approval / editing of narrative & facts)
-- Phase 1: Produce (DiagramAgent, DemoAgent, VideoAgent, WriterAgent)
-- Phase 2: Verify (EvaluatorOptimizer: ClaimAuditor, RenderChecker, VoiceEditor)
+- Human Gate (LangGraph interrupt: approve or edit the contracts)
+- Phase 1: Produce (DiagramAgent, DemoAgent, VideoAgent, WriterAgent, in parallel)
+- Phase 2: Verify (Evaluator-Optimizer loop: ClaimAuditor, RenderChecker, VoiceEditor)
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from rich.console import Console
 
-from agentic_readme.core.models import (
-    FactsLedger,
-    FindingCategory,
-    FindingSeverity,
-    StorySpec,
-    VerificationReport,
-)
-from agentic_readme.core.tracing import traceable
-from agentic_readme.ground.repo_analyst import RepoAnalyst
-from agentic_readme.ground.story_builder import StoryBuilder, refresh_story
-from agentic_readme.produce.demo_agent import DemoAgent
-from agentic_readme.produce.diagram_agent import DiagramAgent
-from agentic_readme.produce.video_agent import VideoAgent
-from agentic_readme.produce.writer_agent import WriterAgent
-from agentic_readme.verify.optimizer import EvaluatorOptimizer
+from agentic_readme.core.contracts import CONTRACTS_DIR, contract_path
+from agentic_readme.core.models import FactsLedger, StorySpec, VerificationReport
+from agentic_readme.orchestrate.graph import ground_contracts, run_pipeline, run_produce, run_verify
 
-CONTRACTS_DIR = ".agentic-readme"
-
-
-def contract_path(root: Path, name: str) -> Path:
-    """Locate story.yaml / facts.json under root/.agentic-readme/.
-
-    Repos grounded before the folder existed keep theirs at the root; that copy is used
-    until a new one is written.
-    """
-    new = Path(root) / CONTRACTS_DIR / name
-    legacy = Path(root) / name
-    return legacy if legacy.exists() and not new.exists() else new
+__all__ = ["CONTRACTS_DIR", "PipelineRunner", "contract_path"]
 
 
 class PipelineRunner:
-    """Coordinates execution across Phase 0, Phase 1, and Phase 2."""
+    """Runs Phase 0, Phase 1, and Phase 2 on one repository."""
 
     def __init__(
         self,
@@ -57,117 +34,51 @@ class PipelineRunner:
         self.output_dir = Path(output_dir or self.repo_path).resolve()
         self.console = console or Console(stderr=True)
 
-    @traceable(name="phase_0_ground")
     def phase_0_ground(self, target_audience: Optional[str] = None, custom_hook: Optional[str] = None) -> Tuple[StorySpec, FactsLedger]:
         """Phase 0: Ground repo facts and narrative into immutable contracts."""
-        self.console.print(f"[bold cyan][Phase 0: GROUND][/bold cyan] Analyzing repository at {self.repo_path}...")
+        return ground_contracts(self.repo_path, self.output_dir, target_audience, custom_hook, console=self.console)
 
-        analyst = RepoAnalyst(self.repo_path)
-        analysis = analyst.analyze()
-
-        ledger = analysis.facts_ledger
-        existing = contract_path(self.output_dir, "story.yaml")
-        if existing.exists():
-            story = refresh_story(StorySpec.load_yaml(existing), ledger, target_audience, custom_hook)
-            self.console.print(f"[green]✔ Kept your edits to {existing.name}[/green] (numbers refreshed from facts)")
-        else:
-            story = StoryBuilder(analysis).build_story(target_audience=target_audience, custom_hook=custom_hook)
-
-        # Save contracts
-        story_file = self.output_dir / CONTRACTS_DIR / "story.yaml"
-        facts_file = self.output_dir / CONTRACTS_DIR / "facts.json"
-        story_file.parent.mkdir(parents=True, exist_ok=True)
-
-        story.save_yaml(story_file)
-        ledger.save(facts_file)
-
-        self.console.print(f"[green]✔ Locked contracts created:[/green]")
-        self.console.print(f"  - Story Spec: [bold]{story_file}[/bold]")
-        self.console.print(f"  - Facts Ledger: [bold]{facts_file}[/bold] ({len(ledger.facts)} facts recorded)")
-
-        return story, ledger
-
-    @traceable(name="phase_1_produce")
     def phase_1_produce(self, story: StorySpec, ledger: FactsLedger) -> Dict[str, Any]:
-        """Phase 1: Fan-out producers reading immutable story and facts."""
-        self.console.print(f"[bold cyan][Phase 1: PRODUCE][/bold cyan] Generating assets from locked story & facts...")
+        """Phase 1: the four producers run in parallel on the locked story and facts."""
+        return run_produce(self.output_dir, story, ledger, console=self.console)
 
-        # 1. Diagram Agent
-        diagram_agent = DiagramAgent(self.output_dir)
-        diagram_assets = diagram_agent.produce(story, ledger)
-        self.console.print("  [green]✔ Diagram Agent:[/green] generated .excalidraw + light/dark SVGs")
-
-        # 2. Demo Agent
-        demo_agent = DemoAgent(self.output_dir)
-        demo_assets = demo_agent.produce(story, ledger)
-        self.console.print("  [green]✔ Demo Agent:[/green] generated VHS script + hero asset")
-
-        # 3. Video Agent
-        video_agent = VideoAgent(self.output_dir)
-        video_assets = video_agent.produce(story, ledger)
-        self.console.print("  [green]✔ Video Agent:[/green] generated /brag 20s spec + scene table")
-
-        # 4. Writer Agent
-        writer_agent = WriterAgent(self.output_dir)
-        readme_path = writer_agent.produce(story, ledger)
-        self.console.print("  [green]✔ Writer Agent:[/green] generated candidate README.md")
-
-        return {
-            "diagrams": diagram_assets,
-            "demo": demo_assets,
-            "video": video_assets,
-            "readme": readme_path,
-        }
-
-    @traceable(name="phase_2_verify")
     def phase_2_verify(self, story: Optional[StorySpec], ledger: FactsLedger) -> Tuple[VerificationReport, bool]:
         """Phase 2: Evaluator-Optimizer loop verifying cross-asset facts and rendering."""
-        self.console.print(f"[bold cyan][Phase 2: VERIFY][/bold cyan] Running cross-asset verification & claim auditing...")
-
-        readme_path = self.output_dir / "README.md"
-        if not readme_path.exists():
-            report = VerificationReport(passed=False)
-            report.add_finding(
-                category=FindingCategory.RENDER_ISSUE,
-                severity=FindingSeverity.FATAL,
-                message=f"Target README.md does not exist at {readme_path}. Generate README first or run produce.",
-                location=str(readme_path),
-                expected="Existing README.md",
-                actual="File not found",
-                suggested_fix="Run 'agentic-readme produce' or 'agentic-readme run' to generate README.md.",
-            )
-            return report, False
-
-        optimizer = EvaluatorOptimizer(self.output_dir, ledger)
-        report, passed = optimizer.run_loop(readme_path, story, max_rounds=2)
-
+        report, passed = run_verify(self.output_dir, story, ledger, console=self.console)
         if passed:
             self.console.print(f"[green]✔ Verification PASSED[/green] ({report.facts_checked} facts checked, 0 fatal bugs)")
         else:
             self.console.print(f"[yellow]⚠ Verification finished with {report.fatal_count} fatal findings[/yellow]")
-
         return report, passed
 
-    @traceable(name="run_all")
-    def run_all(self, auto_approve_gate: bool = True) -> Dict[str, Any]:
-        """Full pipeline execution with Human Gate."""
-        # Phase 0
-        story, ledger = self.phase_0_ground()
-
-        # Human Gate
-        if not auto_approve_gate:
-            self.console.print("[bold yellow]⏸ HUMAN GATE: Please inspect .agentic-readme/story.yaml and facts.json before continuing.[/bold yellow]")
-
-        # Phase 1
-        produced_assets = self.phase_1_produce(story, ledger)
-
-        # Phase 2
-        report, passed = self.phase_2_verify(story, ledger)
-
+    def run_all(
+        self,
+        auto_approve_gate: bool = True,
+        approve: Optional[Callable[[Dict[str, Any]], bool]] = None,
+        polish: bool = False,
+        llm: Optional[Any] = None,
+        target_audience: Optional[str] = None,
+        custom_hook: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Full pipeline. With auto_approve_gate=False the run pauses after grounding and
+        `approve(payload)` decides whether to continue; without a callback it stops there."""
+        state = run_pipeline(
+            self.repo_path,
+            output_dir=self.output_dir,
+            audience=target_audience,
+            hook=custom_hook,
+            polish=polish,
+            review=not auto_approve_gate,
+            approve=approve,
+            llm=llm,
+            console=self.console,
+        )
         return {
-            "story": story,
-            "facts": ledger,
-            "assets": produced_assets,
-            "verification_report": report,
-            "passed": passed,
+            "story": StorySpec.load_yaml(contract_path(self.output_dir, "story.yaml")),
+            "facts": FactsLedger.load(contract_path(self.output_dir, "facts.json")),
+            "approved": state.get("approved", False),
+            "assets": state.get("assets", {}),
+            "verification_report": VerificationReport.model_validate(state["report"]) if state.get("report") else None,
+            "passed": state.get("passed", False),
+            "notes": state.get("notes", []),
         }

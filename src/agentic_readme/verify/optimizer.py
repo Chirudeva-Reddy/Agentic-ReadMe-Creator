@@ -17,10 +17,17 @@ from agentic_readme.core.models import (
     StorySpec,
     VerificationReport,
 )
-from agentic_readme.core.tracing import traceable
+from agentic_readme.core.observability import traced
 from agentic_readme.verify.claim_auditor import ClaimAuditor
 from agentic_readme.verify.render_checker import RenderChecker
 from agentic_readme.verify.voice_editor import VoiceEditor
+
+
+def _evaluation_inputs(arguments: dict) -> dict:
+    # Record what the evaluators actually read: the README text and the story.
+    readme_path = Path(arguments["readme_path"])
+    readme = readme_path.read_text(encoding="utf-8", errors="ignore") if readme_path.exists() else None
+    return {"readme_path": str(readme_path), "readme": readme, "story": arguments.get("story")}
 
 
 class EvaluatorOptimizer:
@@ -55,7 +62,7 @@ class EvaluatorOptimizer:
 
         return current_report, (current_report.fatal_count == 0)
 
-    @traceable(name="evaluate")
+    @traced("evaluate_readme", as_type="evaluator", inputs=_evaluation_inputs)
     def evaluate(self, readme_path: Path, story: Optional[StorySpec]) -> VerificationReport:
         """One evaluation pass: Claim Auditor, Render Checker, then Voice Editor."""
         report = VerificationReport()
@@ -64,7 +71,7 @@ class EvaluatorOptimizer:
         self.voice_editor.check(readme_path, report)
         return report
 
-    @traceable(name="apply_fixes")
+    @traced("apply_fixes", as_type="tool", run_type="tool")
     def apply_fixes(self, readme_path: Path, report: VerificationReport) -> None:
         """Apply deterministic fixes for common drift and render issues."""
         text = readme_path.read_text(encoding="utf-8", errors="ignore")

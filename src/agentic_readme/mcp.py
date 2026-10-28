@@ -111,7 +111,7 @@ TOOLS: List[Dict[str, Any]] = [
                 },
                 "auto_approve": {
                     "type": "boolean",
-                    "description": "Automatically approve Phase 0 contract gate (default: true)",
+                    "description": "Approve the Phase 0 contracts automatically (default: true). When false, the run stops after grounding so story.yaml can be reviewed; then call agentic_readme_produce and agentic_readme_verify.",
                     "default": True,
                 },
             },
@@ -229,6 +229,14 @@ def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
             runner = PipelineRunner(repo_path, output_dir=repo_path)
             res = runner.run_all(auto_approve_gate=auto_approve)
+            if not res["approved"]:
+                out_text = (
+                    f"Stopped at the human gate after Phase 0 Grounding:\n"
+                    f"- Repository: {res['story'].repo_name}\n"
+                    f"- Review: {contract_path(repo_path, 'story.yaml')} and {contract_path(repo_path, 'facts.json')}\n"
+                    f"- Then call agentic_readme_produce and agentic_readme_verify on {repo_path}"
+                )
+                return {"isError": False, "content": [{"type": "text", "text": out_text}]}
 
             report = res["verification_report"]
             status = "PASSED" if res["passed"] else "FAILED"

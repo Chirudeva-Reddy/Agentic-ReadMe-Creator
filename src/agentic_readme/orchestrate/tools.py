@@ -50,4 +50,4 @@ def build_agent(model: Optional[Any] = None):
     if model is None:
         from agentic_readme.orchestrate.llm import default_chat_model
         model = default_chat_model()
-    return create_agent(model, tools=build_tools(), system_prompt=AGENT_SYSTEM_PROMPT, name="agentic-readme-agent")
+    return create_agent(model, tools=build_tools(), system_prompt=AGENT_SYSTEM_PROMPT, name="readme-tools-agent")

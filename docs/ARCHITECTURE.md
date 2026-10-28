@@ -100,6 +100,13 @@ Runs up to 2 verification passes:
 
 ---
 
-## Optional: LangGraph, LangChain, and LangSmith
+## Runtime: LangGraph, LangChain, LangSmith, and Langfuse
 
-The same three phases also run as a LangGraph `StateGraph` (`src/agentic_readme/orchestrate/graph.py`): `ground → [polish] → human_gate → produce → verify ⇄ fix`. The Human Gate becomes a real pause (`interrupt()` with a checkpointer), and the Evaluator-Optimizer loop becomes a cycle between the `verify` and `fix` nodes. LangChain provides the tools, a Claude agent, and an optional prose-polish chain that is rejected if it adds a number not in `facts.json`. LangSmith traces each node and phase and evaluates the graph against `examples/`. See [LANGCHAIN.md](LANGCHAIN.md).
+The phases above run as LangGraph graphs (`src/agentic_readme/orchestrate/graph.py`):
+
+- **Pipeline:** `ground → [polish] → human_gate → produce → diagrams | demo | video | readme → evaluate ⇄ fix`. The Human Gate is a real pause (`interrupt()` with a checkpointer). The four producers run in one parallel step, and the Evaluator-Optimizer loop is a cycle between the `evaluate` and `fix` nodes.
+- **`produce` and `verify`** each run on their own graph when called alone, so the CLI, the MCP server, and `PipelineRunner` all go through LangGraph.
+- **LangChain** provides the tools, a Claude agent, and the opt-in polish chain, which is rejected if it adds a number not in `facts.json`.
+- **LangSmith and Langfuse** receive the same trace for every run, with each graph node and pipeline step as a span, and record evaluation experiments on `examples/`.
+
+See [LANGCHAIN.md](LANGCHAIN.md).

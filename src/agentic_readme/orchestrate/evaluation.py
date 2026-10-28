@@ -1,11 +1,12 @@
-"""LangSmith evaluation of the LangGraph pipeline over the committed examples.
+"""Evaluation of the LangGraph pipeline over the committed examples, in LangSmith or Langfuse.
 
 Dataset: one row per examples/<name>/ that has a committed facts.json. The input is the
 example's folder name; the reference output is the test count in that facts.json.
-Target:  runs the graph on a temporary copy of the example, so the committed files are
+Target:  runs the pipeline on a temporary copy of the example, so the committed files are
          never touched, and returns what the verifier reported.
-Evaluators score each run. run_local_evaluation() applies the same evaluators without
-LangSmith, so the checks also work offline and in CI.
+Evaluators score each run. The same target and evaluators back all three runners:
+run_local_evaluation() (offline, CI), run_langsmith_evaluation(), and
+run_langfuse_evaluation().
 """
 
 from __future__ import annotations
@@ -37,14 +38,14 @@ def build_examples(examples_dir: Path) -> List[Dict[str, Any]]:
 
 def make_target(examples_dir: Path) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
     """The function under evaluation: example name in, verification summary out."""
-    from agentic_readme.orchestrate.graph import run_graph
+    from agentic_readme.orchestrate.graph import run_pipeline
 
     def target(inputs: Dict[str, Any]) -> Dict[str, Any]:
         source = Path(examples_dir) / inputs["example"]
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / source.name
             shutil.copytree(source, repo, ignore=shutil.ignore_patterns("node_modules", "__pycache__", ".pytest_cache"))
-            state = run_graph(repo, console=Console(stderr=True, quiet=True))
+            state = run_pipeline(repo, console=Console(stderr=True, quiet=True))
             test_fact = FactsLedger.load(contract_path(repo, "facts.json")).get_fact("test_count")
 
         report = VerificationReport.model_validate(state["report"])
@@ -60,7 +61,8 @@ def make_target(examples_dir: Path) -> Callable[[Dict[str, Any]], Dict[str, Any]
     return target
 
 
-# Evaluators. LangSmith passes arguments by name, so each takes (outputs, reference_outputs).
+# Evaluators. LangSmith passes arguments by name, so each takes (outputs, reference_outputs);
+# run_langfuse_evaluation() adapts them to Langfuse's (input, output, expected_output).
 # None start with "test_": pytest would collect them in any test module that imports them.
 
 def verification_passed(outputs: Dict[str, Any], reference_outputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -83,7 +85,7 @@ EVALUATORS = [verification_passed, first_pass_clean, reproduces_test_count]
 
 
 def run_local_evaluation(examples_dir: Path) -> List[Dict[str, Any]]:
-    """Run target and evaluators on every example without LangSmith."""
+    """Run target and evaluators on every example, without uploading anything."""
     target = make_target(examples_dir)
     results = []
     for row in build_examples(examples_dir):
@@ -112,3 +114,41 @@ def run_langsmith_evaluation(examples_dir: Path, dataset_name: str = DATASET_NAM
         experiment_prefix=experiment_prefix,
         metadata={"pipeline": "langgraph"},
     )
+
+
+def langfuse_evaluator(evaluator: Callable[..., Dict[str, Any]]) -> Callable[..., Any]:
+    """Wrap a (outputs, reference_outputs) evaluator in Langfuse's keyword signature."""
+    from langfuse import Evaluation
+
+    def evaluate(*, input: Any, output: Dict[str, Any], expected_output: Any = None, **kwargs: Any) -> Evaluation:
+        result = evaluator(output, expected_output or {})
+        return Evaluation(name=result["key"], value=1.0 if result["score"] else 0.0)
+
+    evaluate.__name__ = evaluator.__name__
+    return evaluate
+
+
+def run_langfuse_evaluation(examples_dir: Path, dataset_name: str = DATASET_NAME, experiment_name: str = "agentic-readme-graph"):
+    """Create the dataset on first use, then run an experiment. Needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY."""
+    from langfuse import get_client
+    from langfuse.api import NotFoundError
+
+    langfuse = get_client()
+    try:
+        dataset = langfuse.get_dataset(dataset_name)
+    except NotFoundError:  # first run: create it from the committed examples
+        langfuse.create_dataset(name=dataset_name, description="Committed agentic-readme examples and their test counts.")
+        for row in build_examples(examples_dir):
+            langfuse.create_dataset_item(dataset_name=dataset_name, input=row["inputs"], expected_output=row["outputs"])
+        dataset = langfuse.get_dataset(dataset_name)
+
+    target = make_target(examples_dir)
+    result = dataset.run_experiment(
+        name=experiment_name,
+        task=lambda *, item, **kwargs: target(item.input),
+        evaluators=[langfuse_evaluator(e) for e in EVALUATORS],
+        metadata={"pipeline": "langgraph"},
+        max_concurrency=1,
+    )
+    langfuse.flush()
+    return result

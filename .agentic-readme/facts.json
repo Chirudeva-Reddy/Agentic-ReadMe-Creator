@@ -1,6 +1,6 @@
 {
   "repo_name": "Agentic-ReadMe-Creator",
-  "generated_at": "2026-10-27T22:56:54.335526+00:00",
+  "generated_at": "2026-10-28T06:08:54.895337+00:00",
   "facts": {
     "git_default_branch": {
       "key": "git_default_branch",
@@ -30,7 +30,7 @@
       "description": "Supported Python version requirement",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.339696+00:00"
+      "verified_at": "2026-10-28T06:08:54.900886+00:00"
     },
     "project_version": {
       "key": "project_version",
@@ -40,7 +40,7 @@
       "description": "Project release version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.339763+00:00"
+      "verified_at": "2026-10-28T06:08:54.900987+00:00"
     },
     "project_description": {
       "key": "project_description",
@@ -50,27 +50,27 @@
       "description": "Project summary description",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.339823+00:00"
+      "verified_at": "2026-10-28T06:08:54.901081+00:00"
     },
     "python_file_count": {
       "key": "python_file_count",
-      "value": 26,
+      "value": 27,
       "source_file": "src/",
       "source_type": "source_code",
       "description": "Number of Python source files",
       "unit": "files",
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.341179+00:00"
+      "verified_at": "2026-10-28T06:08:54.903967+00:00"
     },
     "python_loc": {
       "key": "python_loc",
-      "value": 4562,
+      "value": 4936,
       "source_file": "src/",
       "source_type": "source_code",
       "description": "Lines of Python code",
       "unit": "lines",
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.341192+00:00"
+      "verified_at": "2026-10-28T06:08:54.903994+00:00"
     },
     "license": {
       "key": "license",
@@ -80,17 +80,17 @@
       "description": "Software license",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:54.341260+00:00"
+      "verified_at": "2026-10-28T06:08:54.904191+00:00"
     },
     "test_count": {
       "key": "test_count",
-      "value": 68,
+      "value": 76,
       "source_file": "tests",
       "source_type": "test_run",
       "description": "Verified test case count from pytest collection",
       "unit": "tests",
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.341891+00:00"
+      "verified_at": "2026-10-28T06:08:56.712810+00:00"
     },
     "skill": {
       "key": "skill",
@@ -100,7 +100,7 @@
       "description": "Claude Code agent skill specification identifier",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.342186+00:00"
+      "verified_at": "2026-10-28T06:08:56.713214+00:00"
     },
     "protocol": {
       "key": "protocol",
@@ -110,7 +110,7 @@
       "description": "Model Context Protocol specification version",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.342228+00:00"
+      "verified_at": "2026-10-28T06:08:56.713267+00:00"
     },
     "tools_schema": {
       "key": "tools_schema",
@@ -120,7 +120,7 @@
       "description": "OpenAI tools function calling schemas count",
       "unit": "tools",
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.342315+00:00"
+      "verified_at": "2026-10-28T06:08:56.713388+00:00"
     },
     "cli_help_output": {
       "key": "cli_help_output",
@@ -130,7 +130,7 @@
       "description": "Verified CLI help output from live execution",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.803515+00:00"
+      "verified_at": "2026-10-28T06:08:57.763831+00:00"
     },
     "headless_run_status": {
       "key": "headless_run_status",
@@ -140,7 +140,7 @@
       "description": "Project successfully ran headless",
       "unit": null,
       "line_number": null,
-      "verified_at": "2026-10-27T22:56:55.803537+00:00"
+      "verified_at": "2026-10-28T06:08:57.763865+00:00"
     }
   }
 }

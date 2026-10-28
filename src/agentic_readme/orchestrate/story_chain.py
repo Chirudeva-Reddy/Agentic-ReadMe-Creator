@@ -15,7 +15,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 
 from agentic_readme.core.models import FactsLedger, StorySpec
-from agentic_readme.core.tracing import traceable
+from agentic_readme.core.observability import traced
 from agentic_readme.rubrics.humanizer_rules import AI_BUZZWORDS
 
 
@@ -77,7 +77,7 @@ def flagged_words(text: str) -> Set[str]:
     return {w for w in AI_BUZZWORDS if re.search(rf"\b{re.escape(w)}\b", text, re.IGNORECASE)}
 
 
-@traceable(name="polish_story")
+@traced("polish_story")
 def polish_story(
     story: StorySpec,
     ledger: FactsLedger,

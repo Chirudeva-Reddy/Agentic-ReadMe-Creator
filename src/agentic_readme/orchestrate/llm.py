@@ -7,7 +7,7 @@ profile). Set AGENTIC_README_MODEL to use a different Claude model.
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
 DEFAULT_MODEL = "claude-opus-5-5"
 DEFAULT_EFFORT = "medium"
@@ -17,8 +17,11 @@ FALLBACK_MODELS = {"claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "clau
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 
-def default_chat_model(model: Optional[str] = None, effort: str = DEFAULT_EFFORT):
-    """Build a ChatAnthropic model. Thinking is adaptive; `effort` sets how much it spends."""
+def default_chat_model(model: Optional[str] = None, effort: str = DEFAULT_EFFORT, **overrides: Any):
+    """Build a ChatAnthropic model. Thinking is adaptive; `effort` sets how much it spends.
+
+    `overrides` go straight to ChatAnthropic (e.g. anthropic_api_url for a gateway).
+    """
     from langchain_anthropic import ChatAnthropic
 
     model = model or os.getenv("AGENTIC_README_MODEL", DEFAULT_MODEL)
@@ -26,4 +29,4 @@ def default_chat_model(model: Optional[str] = None, effort: str = DEFAULT_EFFORT
     if model in FALLBACK_MODELS:
         # A refused request is re-run on a fallback model inside the same call.
         kwargs = {"betas": [FALLBACK_BETA], "model_kwargs": {"fallbacks": "default"}}
-    return ChatAnthropic(model=model, max_tokens=16000, reasoning_effort=effort, **kwargs)
+    return ChatAnthropic(model=model, max_tokens=16000, reasoning_effort=effort, **{**kwargs, **overrides})

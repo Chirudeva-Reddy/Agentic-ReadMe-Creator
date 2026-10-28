@@ -1,19 +1,19 @@
 """Command-line interface for Agentic ReadMe Creator.
 
-Supports modular execution of:
+Every pipeline command runs on LangGraph and is traced to LangSmith and Langfuse when
+their credentials are set (see core/observability.py):
 - ground: Phase 0 inspection and contract generation
 - produce: Phase 1 parallel asset generation
 - verify: Phase 2 claim auditing and render verification
-- run: End-to-end automated pipeline
+- run: End-to-end pipeline, with an optional human gate and Claude polish
 - audit: Standalone audit of an existing README against facts.json
-- graph: the same pipeline as a LangGraph graph, with an optional human gate and Claude polish
 - agent: a LangChain tool-calling agent over the pipeline tools
-- eval: LangSmith-style evaluation of the graph over the committed examples
+- eval: evaluation of the pipeline over the committed examples (local, LangSmith, or Langfuse)
 """
 
 from __future__ import annotations
 
-import os
+import atexit
 import sys
 from pathlib import Path
 from typing import Optional
@@ -22,6 +22,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from agentic_readme.core import observability
 from agentic_readme.core.models import FactsLedger, StorySpec, VerificationReport
 from agentic_readme.core.runner import PipelineRunner, contract_path
 from agentic_readme.verify.claim_auditor import ClaimAuditor
@@ -35,6 +36,16 @@ app = typer.Typer(
 )
 console = Console()
 
+# Traces are batched in the background; send what is left when the command exits.
+atexit.register(observability.flush)
+
+
+def _report_tracing() -> None:
+    backends = observability.enabled_backends()
+    if backends:
+        observability.flush()
+        console.print(f"Tracing on: {', '.join(backends)} (upload errors, if any, are logged above).")
+
 
 @app.command()
 def ground(
@@ -47,6 +58,7 @@ def ground(
     runner = PipelineRunner(repo_path, output_dir=output_dir)
     story, ledger = runner.phase_0_ground(target_audience=audience, custom_hook=hook)
     console.print(f"[bold green]Phase 0 complete.[/bold green] Inspect .agentic-readme/story.yaml and facts.json before producing.")
+    _report_tracing()
 
 
 @app.command()
@@ -67,6 +79,7 @@ def produce(
     runner = PipelineRunner(dir_path, output_dir=dir_path)
     runner.phase_1_produce(story, ledger)
     console.print(f"[bold green]Phase 1 complete.[/bold green] Assets generated in assets/ and README.md.")
+    _report_tracing()
 
 
 @app.command()
@@ -86,6 +99,7 @@ def verify(
 
     runner = PipelineRunner(dir_path, output_dir=dir_path)
     report, passed = runner.phase_2_verify(story, ledger)
+    _report_tracing()
 
     _display_report(report)
     if not passed:
@@ -121,17 +135,32 @@ def audit(
         raise typer.Exit(code=1)
 
 
+def _confirm_gate(payload) -> bool:
+    console.print(f"[bold yellow]⏸ HUMAN GATE:[/bold yellow] {payload['question']}")
+    console.print(f"  story: {payload['story']}\n  facts: {payload['facts']}")
+    return typer.confirm("Produce the README from these contracts?", default=True)
+
+
 @app.command()
 def run(
     repo_path: Path = typer.Argument(Path("."), help="Path to repository"),
     output_dir: Optional[Path] = typer.Option(None, "--output", "-o", help="Output directory"),
-    auto_approve: bool = typer.Option(True, "--auto-approve", help="Automatically approve Phase 0 gate"),
+    auto_approve: bool = typer.Option(True, "--auto-approve/--review", help="--review pauses after grounding so you can edit story.yaml, then confirm"),
+    polish: bool = typer.Option(False, "--polish", help="Rewrite the story's hook, problem, and solution with Claude (needs ANTHROPIC_API_KEY)"),
+    audience: Optional[str] = typer.Option(None, "--audience", "-a", help="Target audience description"),
+    hook: Optional[str] = typer.Option(None, "--hook", help="Custom 1-line pain hook"),
 ):
-    """Run full 3-phase pipeline (Ground -> Produce -> Verify)."""
+    """Run the full pipeline graph (Ground -> Human Gate -> Produce -> Verify)."""
     runner = PipelineRunner(repo_path, output_dir=output_dir)
-    res = runner.run_all(auto_approve_gate=auto_approve)
-    report = res["verification_report"]
-    _display_report(report)
+    res = runner.run_all(
+        auto_approve_gate=auto_approve, approve=_confirm_gate, polish=polish, target_audience=audience, custom_hook=hook
+    )
+    _report_tracing()
+    if not res["approved"]:
+        console.print("[yellow]Stopped at the human gate. Nothing was produced.[/yellow]")
+        raise typer.Exit(code=1)
+
+    _display_report(res["verification_report"])
     if not res["passed"]:
         raise typer.Exit(code=1)
 
@@ -143,66 +172,17 @@ def mcp():
     run_mcp_server()
 
 
-LANGCHAIN_HINT = 'This command needs the LangChain extras. From a clone: pip install -e ".[langchain]" (see docs/LANGCHAIN.md)'
-
-
-def _require_langchain() -> None:
-    try:
-        import langchain_core  # noqa: F401
-        import langgraph  # noqa: F401
-    except ImportError:
-        console.print(LANGCHAIN_HINT, style="red", markup=False)
-        raise typer.Exit(code=1)
-
-
-def _report_tracing() -> None:
-    from agentic_readme.core.tracing import tracing_enabled
-
-    if tracing_enabled():
-        console.print(f"Trace sent to LangSmith project [bold]{os.environ['LANGSMITH_PROJECT']}[/bold].")
-
-
-@app.command()
-def graph(
-    repo_path: Path = typer.Argument(Path("."), help="Path to repository"),
-    audience: Optional[str] = typer.Option(None, "--audience", "-a", help="Target audience description"),
-    hook: Optional[str] = typer.Option(None, "--hook", help="Custom 1-line pain hook"),
-    polish: bool = typer.Option(False, "--polish", help="Rewrite the story's hook, problem, and solution with Claude (needs ANTHROPIC_API_KEY)"),
-    review: bool = typer.Option(False, "--review", help="Pause after grounding so you can edit story.yaml, then confirm"),
-):
-    """Run the pipeline as a LangGraph graph. Traced in LangSmith when LANGSMITH_TRACING=true."""
-    _require_langchain()
-    from agentic_readme.orchestrate.graph import run_graph
-
-    def approve(payload) -> bool:
-        console.print(f"[bold yellow]⏸ HUMAN GATE:[/bold yellow] {payload['question']}")
-        console.print(f"  story: {payload['story']}\n  facts: {payload['facts']}")
-        return typer.confirm("Produce the README from these contracts?", default=True)
-
-    state = run_graph(repo_path, audience=audience, hook=hook, polish=polish, review=review, approve=approve)
-    _report_tracing()
-    if not state.get("approved"):
-        console.print("[yellow]Stopped at the human gate. Nothing was produced.[/yellow]")
-        raise typer.Exit(code=1)
-
-    _display_report(VerificationReport.model_validate(state["report"]))
-    if not state["passed"]:
-        raise typer.Exit(code=1)
-
-
 @app.command()
 def agent(
     prompt: str = typer.Argument(..., help='What to do, e.g. "write and verify the README for examples/tip-splitter"'),
 ):
     """Ask a Claude agent (LangChain) to run the pipeline tools for you. Needs ANTHROPIC_API_KEY."""
-    _require_langchain()
-    from agentic_readme.core.tracing import configure_tracing
     from agentic_readme.orchestrate.tools import build_agent
 
-    configure_tracing()
-    config = {"run_name": "agentic-readme-agent", "tags": ["agentic-readme", "agent"]}
     try:
-        result = build_agent().invoke({"messages": [{"role": "user", "content": prompt}]}, config)
+        with observability.trace_run("readme-agent", inputs={"prompt": prompt}, tags=["agent"]) as run:
+            result = build_agent().invoke({"messages": [{"role": "user", "content": prompt}]}, run.config)
+            run.set_output({"answer": result["messages"][-1].text})
     except Exception as exc:  # missing credentials, network, API errors
         console.print(f"[red]Agent failed: {exc.__class__.__name__}: {exc}[/red]")
         raise typer.Exit(code=1)
@@ -215,14 +195,18 @@ def agent(
 def evaluate(
     examples_dir: Path = typer.Option(Path("examples"), "--examples", "-e", help="Folder of example projects with committed .agentic-readme/facts.json"),
     langsmith: bool = typer.Option(False, "--langsmith", help="Upload the dataset and record an experiment in LangSmith (needs LANGSMITH_API_KEY)"),
+    langfuse: bool = typer.Option(False, "--langfuse", help="Upload the dataset and record an experiment in Langfuse (needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)"),
 ):
-    """Run the graph on every example and score it (verification passed, clean first pass, test count)."""
-    _require_langchain()
+    """Run the pipeline on every example and score it (verification passed, clean first pass, test count)."""
     from agentic_readme.orchestrate import evaluation
 
     if langsmith:
         results = evaluation.run_langsmith_evaluation(examples_dir)
         console.print(f"LangSmith experiment: [bold]{results.experiment_name}[/bold]")
+    if langfuse:
+        result = evaluation.run_langfuse_evaluation(examples_dir)
+        console.print(f"Langfuse experiment: [bold]{result.run_name}[/bold] {result.experiment_url or ''}")
+    if langsmith or langfuse:
         return
 
     results = evaluation.run_local_evaluation(examples_dir)

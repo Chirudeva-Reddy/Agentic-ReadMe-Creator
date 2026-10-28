@@ -90,7 +90,7 @@
           },
           "auto_approve": {
             "type": "boolean",
-            "description": "Automatically approve Phase 0 contract gate (default: true)"
+            "description": "Approve the Phase 0 contracts automatically (default: true). When false, the run stops after grounding so story.yaml can be reviewed; then call agentic_readme_produce and agentic_readme_verify."
           }
         }
       }
