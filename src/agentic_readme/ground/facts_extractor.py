@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from agentic_readme.core.models import FactItem, FactsLedger, FactSourceType
+from agentic_readme.core.redact import strip_url_credentials
 
 
 class FactsExtractor:
@@ -72,7 +73,8 @@ class FactsExtractor:
             if res_remote.returncode == 0 and res_remote.stdout.strip():
                 ledger.add_fact(
                     key="git_remote_url",
-                    value=res_remote.stdout.strip(),
+                    # Never record a token from the remote URL; it ends up in facts.json and the README.
+                    value=strip_url_credentials(res_remote.stdout.strip()),
                     source_file=".git/config",
                     source_type=FactSourceType.GIT,
                     description="Git remote repository URL",
